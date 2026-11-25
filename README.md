@@ -1,0 +1,2 @@
+# writeups
+cumplir metas 
