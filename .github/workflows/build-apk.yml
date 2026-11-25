@@ -1,7 +1,7 @@
 name: Build APK (Mapa a Junior)
 
 on:
-  workflow_dispatch:        # permite lanzarlo a mano desde la pestaña Actions
+  workflow_dispatch:
   push:
     paths:
       - 'app/**'
@@ -25,8 +25,8 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Aceptar licencias del SDK (ya preinstalado en el runner)
+        run: yes | "$ANDROID_SDK_ROOT"/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null 2>&1 || true
 
       - name: Instalar Cordova
         run: npm install -g cordova@12
