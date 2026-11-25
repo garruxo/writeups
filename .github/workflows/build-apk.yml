@@ -1,0 +1,53 @@
+name: Build APK (Mapa a Junior)
+
+on:
+  workflow_dispatch:        # permite lanzarlo a mano desde la pestaña Actions
+  push:
+    paths:
+      - 'app/**'
+      - '.github/workflows/build-apk.yml'
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar Cordova
+        run: npm install -g cordova@12
+
+      - name: Crear proyecto Cordova con la app
+        run: |
+          cordova create cdv com.garruxo.mapajunior MapaAJunior
+          rm -f cdv/www/index.html
+          cp app/index.html cdv/www/index.html
+
+      - name: Añadir plataforma Android
+        working-directory: cdv
+        run: cordova platform add android@13
+
+      - name: Compilar APK (debug)
+        working-directory: cdv
+        run: cordova build android
+
+      - name: Subir el APK como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: mapa-junior-apk
+          path: cdv/platforms/android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

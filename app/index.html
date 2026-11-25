@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mapa a Junior</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: single scroll column, sticky progress header, themed cards per block */
+  :root{
+    color-scheme:light;
+    --bg:#f3f5f7; --surface:#ffffff; --surface-2:#eef1f4;
+    --fg:#141a21; --muted:#5a6673; --border:#d9dfe5;
+    --accent:#0c8f8f; --accent-soft:#d2ecec; --done:#16915a; --done-soft:#d7eee1;
+    --shadow:0 1px 2px rgba(20,26,33,.06),0 8px 24px rgba(20,26,33,.05);
+    --sans:'Inter',system-ui,-apple-system,sans-serif;
+    --display:'Space Grotesk','Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',monospace;
+  }
+  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+    --bg:#0e1319; --surface:#161d26; --surface-2:#1e2732;
+    --fg:#e8edf2; --muted:#93a0ad; --border:#2a3540;
+    --accent:#3fd1cf; --accent-soft:#143638; --done:#3ad98a; --done-soft:#123526;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+    color-scheme:dark;
+  }}
+  :root[data-theme="dark"]{
+    --bg:#0e1319; --surface:#161d26; --surface-2:#1e2732;
+    --fg:#e8edf2; --muted:#93a0ad; --border:#2a3540;
+    --accent:#3fd1cf; --accent-soft:#143638; --done:#3ad98a; --done-soft:#123526;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  img{max-width:100%}
+  body{
+    background:var(--bg); color:var(--fg); font-family:var(--sans);
+    margin:0; line-height:1.5;
+    padding-left:max(16px,env(safe-area-inset-left,0px));
+    padding-right:max(16px,env(safe-area-inset-right,0px));
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:calc(3rem + env(safe-area-inset-bottom,0px));
+  }
+  .wrap{max-width:640px; margin:0 auto}
+  header{
+    position:sticky; top:0; z-index:10;
+    background:var(--bg); padding-block:1.1rem .9rem;
+    border-bottom:1px solid var(--border);
+  }
+  .eyebrow{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 .2rem}
+  h1{font-family:var(--display);font-size:1.6rem;line-height:1.1;margin:0 0 .1rem;text-wrap:balance}
+  .sub{color:var(--muted);font-size:.86rem;margin:0 0 .85rem}
+  .bar{height:12px;background:var(--surface-2);border-radius:99px;overflow:hidden;border:1px solid var(--border)}
+  .bar > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--done));border-radius:99px;transition:width .35s ease}
+  .bar-meta{display:flex;justify-content:space-between;align-items:baseline;margin-top:.4rem;font-size:.82rem;color:var(--muted)}
+  .bar-meta b{font-family:var(--mono);font-size:1.05rem;color:var(--fg)}
+  main{padding-top:1.1rem;display:flex;flex-direction:column;gap:1rem}
+  section{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+  .s-head{display:flex;align-items:center;gap:.6rem;padding:.9rem 1rem;cursor:pointer;user-select:none}
+  .s-head .ico{font-size:1.1rem;line-height:1}
+  .s-head h2{font-family:var(--display);font-size:1.02rem;margin:0;flex:1;min-width:0}
+  .s-count{font-family:var(--mono);font-size:.78rem;color:var(--muted);background:var(--surface-2);padding:.15rem .5rem;border-radius:99px;white-space:nowrap}
+  .s-head.done .s-count{color:var(--done);background:var(--done-soft)}
+  .chev{color:var(--muted);transition:transform .2s;font-size:.8rem}
+  section.collapsed .chev{transform:rotate(-90deg)}
+  section.collapsed ul{display:none}
+  ul{list-style:none;margin:0;padding:.2rem .6rem 1rem;display:flex;flex-direction:column;gap:.15rem}
+  li{min-width:0}
+  label{display:flex;align-items:flex-start;gap:.7rem;padding:.6rem .5rem;border-radius:10px;cursor:pointer}
+  label:active{background:var(--surface-2)}
+  input[type=checkbox]{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:22px;height:22px;margin:0;border:2px solid var(--border);border-radius:7px;background:var(--surface);display:grid;place-content:center;transition:.15s;cursor:pointer}
+  input[type=checkbox]:checked{background:var(--done);border-color:var(--done)}
+  input[type=checkbox]:checked::after{content:"";width:6px;height:11px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translateY(-1px)}
+  input[type=checkbox]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .txt{min-width:0;font-size:.92rem;padding-top:.05rem}
+  .txt small{display:block;color:var(--muted);font-size:.78rem;margin-top:.1rem}
+  input:checked + .txt{color:var(--muted)}
+  input:checked + .txt .lead{text-decoration:line-through;text-decoration-color:var(--muted)}
+  footer{margin-top:1.4rem;text-align:center;color:var(--muted);font-size:.8rem;display:flex;flex-direction:column;gap:.7rem;align-items:center}
+  .reset{font-family:var(--mono);font-size:.74rem;color:var(--muted);background:none;border:1px solid var(--border);border-radius:99px;padding:.4rem .8rem;cursor:pointer}
+  .reset:active{background:var(--surface-2)}
+  .note{max-width:48ch;line-height:1.45}
+  .actions{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;align-items:center}
+  .btn{font-family:var(--sans);font-size:.85rem;font-weight:600;color:#fff;background:var(--accent);border:none;border-radius:99px;padding:.6rem 1.1rem;cursor:pointer}
+  .btn:active{filter:brightness(.92)}
+  .btn.ghost{background:var(--surface-2);color:var(--fg)}
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);width:100%;max-width:560px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;padding:1.1rem;gap:.7rem}
+  .card h3{font-family:var(--display);margin:0;font-size:1.1rem}
+  .card .hint{margin:0;color:var(--muted);font-size:.8rem}
+  .card textarea{flex:1;min-height:200px;resize:vertical;font-family:var(--mono);font-size:.76rem;line-height:1.45;color:var(--fg);background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:.7rem;width:100%}
+  .card .row{display:flex;gap:.6rem;justify-content:flex-end;flex-wrap:wrap}
+  .card.lg{max-width:620px}
+  .card .scroll{overflow-y:auto;flex:1;padding-right:.2rem;min-height:0}
+  .field{display:flex;flex-direction:column;gap:.25rem;margin-bottom:.7rem}
+  .field > label{font-size:.78rem;font-weight:600;color:var(--muted)}
+  .field input,.field textarea{font-family:var(--sans);font-size:.88rem;color:var(--fg);background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:.55rem .65rem;width:100%}
+  .field textarea{min-height:64px;resize:vertical;line-height:1.45}
+  .ihint{font-size:.72rem;color:var(--accent)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+  @media(max-width:430px){.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Ruta Web / AppSec</p>
+    <h1>Mapa a Junior</h1>
+    <p class="sub">Marca cada paso que completes. Se guarda solo en este dispositivo.</p>
+    <div class="bar"><i id="globalBar"></i></div>
+    <div class="bar-meta"><span id="globalPct"><b>0%</b> listo</span><span id="globalCount">0 / 0</span></div>
+  </header>
+
+  <main id="app">
+
+    <section data-sec>
+      <div class="s-head"><span class="ico">✅</span><h2>Base ya conseguida</h2><span class="s-count"></span><span class="chev">▼</span></div>
+      <ul>
+        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Laboratorio propio montado</span><small>VMs aisladas en red host-only (Kira Lab)</small></span></label></li>
+        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Ciclo completo de intrusión</span><small>recon → explotación → post-explotación → defensa</small></span></label></li>
+        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Web Cache Deception</span></span></label></li>
+        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Scripting en Python</span><small>scripts propios de explotación</small></span></label></li>
+        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Escribir informes</span><small>ataque y defensa</small></span></label></li>
+        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Herramientas base</span><small>nmap · Burp Suite · Metasploit · sqlmap</small></span></label></li>
+        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Ética y límites legales claros</span></span></label></li>
+      </ul>
+    </section>
+
+    <section data-sec>
+      <div class="s-head"><span class="ico">🕸️</span><h2>1 · Amplitud web (OWASP Top 10)</h2><span class="s-count"></span><span class="chev">▼</span></div>
+      <ul>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">XSS</span><small>reflejado, almacenado y DOM</small></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">Control de acceso / IDOR</span><small>fáciles y muy premiados</small></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">Autenticación</span><small>fallos de login, 2FA</small></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">SSRF</span></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">CSRF</span></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">File upload &amp; path traversal</span></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">Command injection</span></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">XXE</span></span></label></li>
+      </ul>
+    </section>
+
+    <section data-sec>
+      <div class="s-head"><span class="ico">💉</span><h2>SQL Injection · 18 labs</h2><span class="s-count"></span><span class="chev">▼</span></div>
+      <ul>
+        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">WHERE clause — datos ocultos</span><small>Apprentice</small></span></label></li>
+        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Login bypass</span><small>Apprentice</small></span></label></li>
+        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Versión BD — Oracle</span></span></label></li>
+        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Versión BD — MySQL/Microsoft</span></span></label></li>
+        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Listar contenido — no-Oracle</span></span></label></li>
+        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Listar contenido — Oracle</span></span></label></li>
+        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">UNION — número de columnas</span></span></label></li>
+        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">UNION — columna con texto</span></span></label></li>
+        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">UNION — datos de otras tablas</span></span></label></li>
+        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">UNION — varios valores en 1 columna</span></span></label></li>
+        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Blind — respuestas condicionales</span></span></label></li>
+        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Blind — errores condicionales</span></span></label></li>
+        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Visible error-based</span></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">Blind — time delays</span></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">Blind — time delays + extracción</span></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">Blind — out-of-band (interacción)</span><small>⚠️ necesita Burp Pro</small></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">Blind — out-of-band (exfiltración)</span><small>⚠️ necesita Burp Pro</small></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">Filter bypass vía XML encoding</span></span></label></li>
+      </ul>
+    </section>
+
+    <section data-sec>
+      <div class="s-head"><span class="ico">🌐</span><h2>2 · Fundamentos de red e infra</h2><span class="s-count"></span><span class="chev">▼</span></div>
+      <ul>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">TCP/IP, DNS y HTTP a fondo</span></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">Firewalls y segmentación de red</span></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">Active Directory básico</span><small>muchos pentests son de red Windows</small></span></label></li>
+      </ul>
+    </section>
+
+    <section data-sec>
+      <div class="s-head"><span class="ico">🖥️</span><h2>3 · Máquinas completas (metodología)</h2><span class="s-count"></span><span class="chev">▼</span></div>
+      <ul>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">Crear perfil en TryHackMe</span></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">Crear perfil en Hack The Box</span></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">Resolver 5+ máquinas en voz alta</span><small>entrena la entrevista práctica</small></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">Completar metodología Fases 2–7</span><small>tu metodologia_pentest.md</small></span></label></li>
+      </ul>
+    </section>
+
+    <section data-sec>
+      <div class="s-head"><span class="ico">📜</span><h2>4 · Certificación</h2><span class="s-count"></span><span class="chev">▼</span></div>
+      <ul>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">Elegir cert junior</span><small>eJPT (práctica) o Security+ (teórica)</small></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">Estudiar y practicar</span></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">Aprobar la certificación</span></span></label></li>
+      </ul>
+    </section>
+
+    <section data-sec>
+      <div class="s-head"><span class="ico">👀</span><h2>5 · Portfolio visible <span style="font-weight:400;color:var(--accent)">(prioridad)</span></h2><span class="s-count"></span><span class="chev">▼</span></div>
+      <ul>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">Crear cuenta y repo en GitHub</span></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">Subir tus documentos y scripts</span><small>metodología, referencia SQLi, Kira</small></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">Escribir 5–10 writeups</span></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">Perfil de LinkedIn completo</span></span></label></li>
+        <li><label><input type="checkbox"><span class="txt"><span class="lead">Perfiles THM / HTB públicos en el CV</span></span></label></li>
+      </ul>
+    </section>
+
+    <footer>
+      <p class="note">Cuando todo esté marcado, tienes de sobra para aplicar a Junior / SOC / analista de vulnerabilidades. No te falta talento — te falta recorrer esta lista.</p>
+      <div class="actions">
+        <button class="btn" id="newWriteup">✍️ Nuevo writeup</button>
+        <button class="btn ghost" id="genReport">📋 Informe</button>
+        <button class="reset" id="reset">Reiniciar</button>
+      </div>
+      <p class="note" style="font-size:.74rem">El informe se genera con lo que tengas marcado. Cópialo y pégalo en tu GitHub, LinkedIn o CV.</p>
+    </footer>
+
+    <div class="overlay" id="reportOverlay" hidden>
+      <div class="card">
+        <h3>Tu informe de progreso</h3>
+        <p class="hint">Cópialo y pégalo en tu GitHub (README), LinkedIn o CV. Refleja lo que tienes marcado ahora.</p>
+        <textarea id="reportText" readonly></textarea>
+        <div class="row">
+          <button class="btn ghost" id="closeReport">Cerrar</button>
+          <button class="btn" id="copyReport">Copiar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay" id="writeupOverlay" hidden>
+      <div class="card lg">
+        <h3>Nuevo writeup</h3>
+        <p class="hint">Rellénalo y pulsa «Generar». Copia el resultado y pégalo en GitHub; ahí arrastras las capturas en los huecos marcados. Se guarda el borrador solo.</p>
+        <div class="scroll">
+          <div class="field"><label>Título</label><input id="wu-titulo" placeholder="SQLi ciega — robo de la contraseña del admin"></div>
+          <div class="grid2">
+            <div class="field"><label>Tipo</label><input id="wu-tipo" placeholder="SQL Injection"></div>
+            <div class="field"><label>Plataforma</label><input id="wu-plat" placeholder="PortSwigger"></div>
+            <div class="field"><label>Dificultad</label><input id="wu-dif" placeholder="Practitioner"></div>
+            <div class="field"><label>Herramientas</label><input id="wu-tools" placeholder="Burp Suite, Python"></div>
+          </div>
+          <div class="field"><label>Resumen</label><textarea id="wu-resumen" placeholder="2-3 frases: qué fallo, qué conseguiste, por qué importa"></textarea></div>
+          <div class="field"><label>Objetivo y entorno</label><textarea id="wu-obj" placeholder="Qué había que lograr y en qué app"></textarea></div>
+          <div class="field"><label>Reconocimiento / Detección</label><textarea id="wu-recon" placeholder="Cómo descubriste el fallo"></textarea></div>
+          <div class="field"><label>Pie de la captura de detección</label><input id="wu-recon-img" placeholder="Burp mostrando el comportamiento raro"><span class="ihint">↑ crea un hueco de imagen en el writeup</span></div>
+          <div class="field"><label>Explotación (pasos)</label><textarea id="wu-exploit" placeholder="Los pasos del ataque, con sus comandos/payloads"></textarea></div>
+          <div class="field"><label>Pie de la captura del payload</label><input id="wu-img1" placeholder="El payload enviado"></div>
+          <div class="field"><label>Pie de la captura del resultado (PoC)</label><input id="wu-img2" placeholder="La contraseña robada / Congratulations"></div>
+          <div class="field"><label>Impacto</label><textarea id="wu-impacto" placeholder="Qué podría hacer un atacante real"></textarea></div>
+          <div class="field"><label>Remediación</label><textarea id="wu-rem" placeholder="Cómo se arregla (consultas parametrizadas...)"></textarea></div>
+          <div class="field"><label>Lo que aprendí</label><textarea id="wu-aprendi" placeholder="La idea clave que te llevas"></textarea></div>
+        </div>
+        <textarea id="wu-out" readonly hidden style="min-height:160px"></textarea>
+        <div class="row">
+          <button class="btn ghost" id="closeWriteup">Cerrar</button>
+          <button class="btn" id="genWriteup">Generar markdown</button>
+          <button class="btn" id="copyWriteup" hidden>Copiar</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  var KEY='mapa-junior-v2';
+  var boxes=[].slice.call(document.querySelectorAll('input[type=checkbox]'));
+  var seen={};
+  boxes.forEach(function(b){
+    var t=((b.parentElement.querySelector('.lead')||{}).textContent||'item')
+          .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,42);
+    var id=t, n=1; while(seen[id]){ id=t+'-'+(++n); } seen[id]=true;
+    b.id='c-'+id;
+  });
+
+  var saved={};
+  try{ var raw=localStorage.getItem(KEY); if(raw) saved=JSON.parse(raw)||{}; }catch(e){}
+
+  boxes.forEach(function(b){
+    if(saved.hasOwnProperty(b.id)) b.checked=!!saved[b.id];
+    else b.checked=(b.getAttribute('data-default')==='done');
+  });
+
+  function persist(){
+    var o={}; boxes.forEach(function(b){ o[b.id]=b.checked; });
+    try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){}
+  }
+
+  function refresh(){
+    var total=boxes.length, done=boxes.filter(function(b){return b.checked;}).length;
+    var pct= total? Math.round(done/total*100):0;
+    document.getElementById('globalBar').style.width=pct+'%';
+    document.getElementById('globalPct').innerHTML='<b>'+pct+'%</b> listo';
+    document.getElementById('globalCount').textContent=done+' / '+total;
+    document.querySelectorAll('[data-sec]').forEach(function(sec){
+      var bs=[].slice.call(sec.querySelectorAll('input[type=checkbox]'));
+      var d=bs.filter(function(b){return b.checked;}).length;
+      var head=sec.querySelector('.s-head');
+      sec.querySelector('.s-count').textContent=d+'/'+bs.length;
+      head.classList.toggle('done', d===bs.length && bs.length>0);
+    });
+  }
+
+  boxes.forEach(function(b){ b.addEventListener('change', function(){ persist(); refresh(); }); });
+
+  document.querySelectorAll('.s-head').forEach(function(h){
+    h.addEventListener('click', function(){ h.parentElement.classList.toggle('collapsed'); });
+  });
+
+  document.getElementById('reset').addEventListener('click', function(){
+    boxes.forEach(function(b){ b.checked=(b.getAttribute('data-default')==='done'); });
+    persist(); refresh();
+  });
+
+  // ---- Informe de progreso ----
+  function buildReport(){
+    var secs=[].slice.call(document.querySelectorAll('[data-sec]'));
+    var done=[], pend=[], totalDone=0, total=0;
+    secs.forEach(function(sec){
+      var title=sec.querySelector('.s-head h2').textContent.trim().replace(/\s+/g,' ');
+      var bs=[].slice.call(sec.querySelectorAll('input[type=checkbox]'));
+      var ds=[], ps=[];
+      bs.forEach(function(b){
+        var t=((b.parentElement.querySelector('.lead')||{}).textContent||'').trim();
+        total++; if(b.checked){ totalDone++; ds.push(t);} else ps.push(t);
+      });
+      if(ds.length){ done.push('### '+title); ds.forEach(function(t){done.push('- '+t);}); done.push(''); }
+      if(ps.length){ pend.push('### '+title); ps.forEach(function(t){pend.push('- '+t);}); pend.push(''); }
+    });
+    var pct= total? Math.round(totalDone/total*100):0;
+    var d=new Date(), fecha=('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear();
+    var o=[];
+    o.push('# Mi camino hacia Pentester Junior','');
+    o.push('**Progreso: '+pct+'% ('+totalDone+'/'+total+' pasos)** · actualizado '+fecha,'');
+    o.push('Formación continua en seguridad web / AppSec: laboratorio propio aislado (red host-only), práctica en PortSwigger Web Security Academy y scripting de explotación en Python.','');
+    o.push('## Conseguido','');
+    o=o.concat(done);
+    if(pend.length){ o.push('## Aprendiendo ahora',''); o=o.concat(pend); }
+    return o.join('\n').replace(/\n{3,}/g,'\n\n').trim()+'\n';
+  }
+  var ov=document.getElementById('reportOverlay');
+  document.getElementById('genReport').addEventListener('click', function(){
+    var ta=document.getElementById('reportText');
+    ta.value=buildReport(); ov.hidden=false; ta.focus(); ta.select();
+  });
+  document.getElementById('closeReport').addEventListener('click', function(){ ov.hidden=true; });
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.hidden=true; });
+  document.getElementById('copyReport').addEventListener('click', function(){
+    var ta=document.getElementById('reportText'), btn=this; ta.focus(); ta.select();
+    function ok(){ btn.textContent='¡Copiado!'; setTimeout(function(){btn.textContent='Copiar';},1500); }
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(ta.value).then(ok).catch(function(){ try{document.execCommand('copy');ok();}catch(e){} });
+      } else { document.execCommand('copy'); ok(); }
+    }catch(e){ try{document.execCommand('copy'); ok();}catch(e2){} }
+  });
+
+  // ---- Compositor de writeups ----
+  var WUKEY='mapa-junior-writeup';
+  var wuIds=['titulo','tipo','plat','dif','tools','resumen','obj','recon','recon-img','exploit','img1','img2','impacto','rem','aprendi'];
+  function wuEl(k){return document.getElementById('wu-'+k);}
+  try{ var wd=JSON.parse(localStorage.getItem(WUKEY)||'{}'); wuIds.forEach(function(k){ if(wd[k]!=null && wuEl(k)) wuEl(k).value=wd[k]; }); }catch(e){}
+  function wuSave(){ var o={}; wuIds.forEach(function(k){ if(wuEl(k)) o[k]=wuEl(k).value; }); try{localStorage.setItem(WUKEY,JSON.stringify(o));}catch(e){} }
+  wuIds.forEach(function(k){ var el=wuEl(k); if(el) el.addEventListener('input', wuSave); });
+
+  function imgLine(cap){ return cap? ('\n> 📸 **Captura:** '+cap+'  _(arrastra aquí la imagen en GitHub)_\n') : ''; }
+  function buildWriteup(){
+    function v(k){ return (wuEl(k).value||'').trim(); }
+    var o=[];
+    o.push('# '+(v('titulo')||'[Título]'),'');
+    o.push('| | |','|---|---|');
+    o.push('| **Tipo** | '+(v('tipo')||'—')+' |');
+    o.push('| **Plataforma** | '+(v('plat')||'—')+' |');
+    o.push('| **Dificultad** | '+(v('dif')||'—')+' |');
+    o.push('| **Herramientas** | '+(v('tools')||'—')+' |','');
+    o.push('## Resumen', v('resumen'), '');
+    o.push('## Objetivo y entorno', v('obj'), '');
+    o.push('## 1 · Reconocimiento / Detección', v('recon'));
+    o.push(imgLine(v('recon-img')));
+    o.push('## 2 · Explotación', v('exploit'));
+    o.push(imgLine(v('img1')));
+    o.push(imgLine(v('img2')));
+    o.push('## 3 · Impacto', v('impacto'), '');
+    o.push('## 4 · Cómo se arregla (remediación)', v('rem'), '');
+    o.push('## Lo que aprendí', v('aprendi'), '');
+    o.push('---','<sub>Realizado en entorno de laboratorio / con autorización. Solo con fines educativos.</sub>');
+    return o.join('\n').replace(/\n{3,}/g,'\n\n').trim()+'\n';
+  }
+  var wov=document.getElementById('writeupOverlay');
+  document.getElementById('newWriteup').addEventListener('click', function(){ wov.hidden=false; });
+  document.getElementById('closeWriteup').addEventListener('click', function(){ wov.hidden=true; });
+  wov.addEventListener('click', function(e){ if(e.target===wov) wov.hidden=true; });
+  document.getElementById('genWriteup').addEventListener('click', function(){
+    var out=document.getElementById('wu-out'); out.value=buildWriteup(); out.hidden=false;
+    document.getElementById('copyWriteup').hidden=false; out.focus(); out.select();
+  });
+  document.getElementById('copyWriteup').addEventListener('click', function(){
+    var ta=document.getElementById('wu-out'), btn=this; ta.focus(); ta.select();
+    function ok(){ btn.textContent='¡Copiado!'; setTimeout(function(){btn.textContent='Copiar';},1500); }
+    try{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(ta.value).then(ok).catch(function(){try{document.execCommand('copy');ok();}catch(e){}}); } else { document.execCommand('copy'); ok(); } }catch(e){ try{document.execCommand('copy');ok();}catch(e2){} }
+  });
+
+  refresh();
+})();
+</script>
+</body>
+</html>
