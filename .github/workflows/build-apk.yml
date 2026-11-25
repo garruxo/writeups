@@ -25,7 +25,7 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Aceptar licencias del SDK (ya preinstalado en el runner)
+      - name: Aceptar licencias del SDK (ya preinstalado)
         run: yes | "$ANDROID_SDK_ROOT"/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null 2>&1 || true
 
       - name: Instalar Cordova
@@ -41,9 +41,18 @@ jobs:
         working-directory: cdv
         run: cordova platform add android@13
 
-      - name: Compilar APK (debug)
+      - name: Firmar siempre con la misma clave + versión creciente
         working-directory: cdv
-        run: cordova build android
+        run: |
+          cp ../app/debug.keystore debug.keystore
+          cat > build.json <<'J'
+          {"android":{"debug":{"keystore":"debug.keystore","storePassword":"android","alias":"androiddebugkey","password":"android","keystoreType":"jks"}}}
+          J
+          sed -i 's/<widget /<widget android-versionCode="'"${GITHUB_RUN_NUMBER}"'" /' config.xml
+
+      - name: Compilar APK (debug, firmado estable)
+        working-directory: cdv
+        run: cordova build android --buildConfig=build.json
 
       - name: Subir el APK como artefacto
         uses: actions/upload-artifact@v4
