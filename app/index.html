@@ -3,15 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Mapa a Junior</title>
+<style>[hidden]{display:none!important}img{max-width:100%}:root{color-scheme:light}</style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<title>Mapa de Carrera</title>
 <style>
-  /* Layout: single scroll column, sticky progress header, themed cards per block */
+  /* Layout: gamified career ladder — XP header, locked tiers, labs + proof per item */
   :root{
-    color-scheme:light;
     --bg:#f3f5f7; --surface:#ffffff; --surface-2:#eef1f4;
     --fg:#141a21; --muted:#5a6673; --border:#d9dfe5;
     --accent:#0c8f8f; --accent-soft:#d2ecec; --done:#16915a; --done-soft:#d7eee1;
+    --gold:#c98a00; --gold-soft:#f6e9c8;
     --shadow:0 1px 2px rgba(20,26,33,.06),0 8px 24px rgba(20,26,33,.05);
     --sans:'Inter',system-ui,-apple-system,sans-serif;
     --display:'Space Grotesk','Inter',system-ui,sans-serif;
@@ -21,6 +22,7 @@
     --bg:#0e1319; --surface:#161d26; --surface-2:#1e2732;
     --fg:#e8edf2; --muted:#93a0ad; --border:#2a3540;
     --accent:#3fd1cf; --accent-soft:#143638; --done:#3ad98a; --done-soft:#123526;
+    --gold:#f0c24b; --gold-soft:#2e2410;
     --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
     color-scheme:dark;
   }}
@@ -28,70 +30,87 @@
     --bg:#0e1319; --surface:#161d26; --surface-2:#1e2732;
     --fg:#e8edf2; --muted:#93a0ad; --border:#2a3540;
     --accent:#3fd1cf; --accent-soft:#143638; --done:#3ad98a; --done-soft:#123526;
+    --gold:#f0c24b; --gold-soft:#2e2410;
     --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
     color-scheme:dark;
   }
   *{box-sizing:border-box}
-  [hidden]{display:none!important}
-  img{max-width:100%}
   body{
     background:var(--bg); color:var(--fg); font-family:var(--sans);
     margin:0; line-height:1.5;
     padding-left:max(16px,env(safe-area-inset-left,0px));
     padding-right:max(16px,env(safe-area-inset-right,0px));
-    padding-top:env(safe-area-inset-top,0px);
-    padding-bottom:calc(3rem + env(safe-area-inset-bottom,0px));
+    padding-block:0 3rem;
   }
-  .wrap{max-width:640px; margin:0 auto}
-  header{
-    position:sticky; top:0; z-index:10;
-    background:var(--bg); padding-block:1.1rem .9rem;
-    border-bottom:1px solid var(--border);
-  }
-  .eyebrow{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 .2rem}
-  h1{font-family:var(--display);font-size:1.6rem;line-height:1.1;margin:0 0 .1rem;text-wrap:balance}
-  .sub{color:var(--muted);font-size:.86rem;margin:0 0 .85rem}
-  .bar{height:12px;background:var(--surface-2);border-radius:99px;overflow:hidden;border:1px solid var(--border)}
-  .bar > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--done));border-radius:99px;transition:width .35s ease}
-  .bar-meta{display:flex;justify-content:space-between;align-items:baseline;margin-top:.4rem;font-size:.82rem;color:var(--muted)}
-  .bar-meta b{font-family:var(--mono);font-size:1.05rem;color:var(--fg)}
-  main{padding-top:1.1rem;display:flex;flex-direction:column;gap:1rem}
+  .wrap{max-width:660px; margin:0 auto}
+  body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:20}
+
+  header{position:sticky; top:env(safe-area-inset-top,0px); z-index:15; background:var(--bg); padding-block:.9rem .8rem; border-bottom:1px solid var(--border)}
+  .rank-row{display:flex;align-items:center;gap:.7rem}
+  .badge{font-family:var(--display);font-weight:700;font-size:1.05rem;background:var(--gold-soft);color:var(--gold);border:1px solid var(--gold);border-radius:12px;padding:.3rem .7rem;white-space:nowrap}
+  .rank-info{flex:1;min-width:0}
+  .rank-info .lvl{font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .rank-info .xp{font-family:var(--display);font-weight:600;font-size:1rem;margin:.05rem 0 .3rem}
+  .bar{height:9px;background:var(--surface-2);border-radius:99px;overflow:hidden;border:1px solid var(--border)}
+  .bar > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--gold));border-radius:99px;transition:width .4s ease}
+  .next{font-size:.72rem;color:var(--muted);margin-top:.25rem}
+
+  main{padding-top:1rem;display:flex;flex-direction:column;gap:1.3rem}
+  .tier{position:relative;display:flex;flex-direction:column;gap:.8rem}
+  .tier-head{display:flex;align-items:center;gap:.6rem}
+  .tier-num{font-family:var(--mono);font-size:.7rem;font-weight:500;letter-spacing:.1em;color:var(--accent);background:var(--accent-soft);padding:.2rem .55rem;border-radius:99px;white-space:nowrap}
+  .tier-head h2{font-family:var(--display);font-size:1.15rem;margin:0;flex:1;min-width:0}
+  .tier-pct{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+  .tier.locked > .tier-body{filter:blur(3px) grayscale(.4);opacity:.5;pointer-events:none;user-select:none}
+  .lock-ov{display:none;position:absolute;inset:38px 0 0;z-index:5;align-items:flex-start;justify-content:center;padding-top:2.5rem}
+  .tier.locked .lock-ov{display:flex}
+  .lock-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:1rem 1.2rem;text-align:center;max-width:300px}
+  .lock-card .big{font-size:1.6rem}
+  .lock-card p{margin:.3rem 0 0;font-size:.85rem;color:var(--muted)}
+  .tier-body{display:flex;flex-direction:column;gap:.8rem}
+
   section{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
-  .s-head{display:flex;align-items:center;gap:.6rem;padding:.9rem 1rem;cursor:pointer;user-select:none}
+  .s-head{display:flex;align-items:center;gap:.6rem;padding:.85rem 1rem;cursor:pointer;user-select:none}
   .s-head .ico{font-size:1.1rem;line-height:1}
-  .s-head h2{font-family:var(--display);font-size:1.02rem;margin:0;flex:1;min-width:0}
-  .s-count{font-family:var(--mono);font-size:.78rem;color:var(--muted);background:var(--surface-2);padding:.15rem .5rem;border-radius:99px;white-space:nowrap}
+  .s-head h3{font-family:var(--display);font-size:1rem;margin:0;flex:1;min-width:0}
+  .s-count{font-family:var(--mono);font-size:.76rem;color:var(--muted);background:var(--surface-2);padding:.15rem .5rem;border-radius:99px;white-space:nowrap}
   .s-head.done .s-count{color:var(--done);background:var(--done-soft)}
   .chev{color:var(--muted);transition:transform .2s;font-size:.8rem}
   section.collapsed .chev{transform:rotate(-90deg)}
   section.collapsed ul{display:none}
-  ul{list-style:none;margin:0;padding:.2rem .6rem 1rem;display:flex;flex-direction:column;gap:.15rem}
-  li{min-width:0}
-  label{display:flex;align-items:flex-start;gap:.7rem;padding:.6rem .5rem;border-radius:10px;cursor:pointer}
-  label:active{background:var(--surface-2)}
+  ul{list-style:none;margin:0;padding:.2rem .55rem .8rem;display:flex;flex-direction:column;gap:.1rem}
+  .item{min-width:0;border-radius:10px;padding:.15rem 0}
+  .item label{display:flex;align-items:flex-start;gap:.7rem;padding:.55rem .5rem .3rem;cursor:pointer}
+  .item.has-proof{background:var(--done-soft)}
   input[type=checkbox]{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:22px;height:22px;margin:0;border:2px solid var(--border);border-radius:7px;background:var(--surface);display:grid;place-content:center;transition:.15s;cursor:pointer}
   input[type=checkbox]:checked{background:var(--done);border-color:var(--done)}
   input[type=checkbox]:checked::after{content:"";width:6px;height:11px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translateY(-1px)}
   input[type=checkbox]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   .txt{min-width:0;font-size:.92rem;padding-top:.05rem}
-  .txt small{display:block;color:var(--muted);font-size:.78rem;margin-top:.1rem}
-  input:checked + .txt{color:var(--muted)}
-  input:checked + .txt .lead{text-decoration:line-through;text-decoration-color:var(--muted)}
+  .txt small{display:block;color:var(--muted);font-size:.77rem;margin-top:.1rem}
+  input:checked + .txt .lead{text-decoration:line-through;text-decoration-color:var(--muted);color:var(--muted)}
+  .meta{display:flex;flex-wrap:wrap;gap:.4rem;padding:0 .5rem .35rem 2.9rem}
+  .lab,.proofBtn{font-family:var(--mono);font-size:.72rem;border:1px solid var(--border);border-radius:99px;padding:.22rem .55rem;cursor:pointer;background:var(--surface-2);color:var(--fg);text-decoration:none;display:inline-flex;align-items:center;gap:.25rem}
+  .lab{color:var(--accent);border-color:var(--accent-soft)}
+  .proofBtn.on{background:var(--done-soft);color:var(--done);border-color:var(--done)}
+  .proof{display:none;margin:0 .5rem .5rem 2.9rem;width:calc(100% - 3.4rem);font-family:var(--sans);font-size:.82rem;color:var(--fg);background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:.45rem .6rem}
+  .proof.show{display:block}
+
   footer{margin-top:1.4rem;text-align:center;color:var(--muted);font-size:.8rem;display:flex;flex-direction:column;gap:.7rem;align-items:center}
-  .reset{font-family:var(--mono);font-size:.74rem;color:var(--muted);background:none;border:1px solid var(--border);border-radius:99px;padding:.4rem .8rem;cursor:pointer}
-  .reset:active{background:var(--surface-2)}
   .note{max-width:48ch;line-height:1.45}
   .actions{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;align-items:center}
   .btn{font-family:var(--sans);font-size:.85rem;font-weight:600;color:#fff;background:var(--accent);border:none;border-radius:99px;padding:.6rem 1.1rem;cursor:pointer}
   .btn:active{filter:brightness(.92)}
   .btn.ghost{background:var(--surface-2);color:var(--fg)}
+  .reset{font-family:var(--mono);font-size:.74rem;color:var(--muted);background:none;border:1px solid var(--border);border-radius:99px;padding:.4rem .8rem;cursor:pointer}
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+  .overlay[hidden]{display:none}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);width:100%;max-width:560px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;padding:1.1rem;gap:.7rem}
+  .card.lg{max-width:620px}
   .card h3{font-family:var(--display);margin:0;font-size:1.1rem}
   .card .hint{margin:0;color:var(--muted);font-size:.8rem}
   .card textarea{flex:1;min-height:200px;resize:vertical;font-family:var(--mono);font-size:.76rem;line-height:1.45;color:var(--fg);background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:.7rem;width:100%}
   .card .row{display:flex;gap:.6rem;justify-content:flex-end;flex-wrap:wrap}
-  .card.lg{max-width:620px}
   .card .scroll{overflow-y:auto;flex:1;padding-right:.2rem;min-height:0}
   .field{display:flex;flex-direction:column;gap:.25rem;margin-bottom:.7rem}
   .field > label{font-size:.78rem;font-weight:600;color:var(--muted)}
@@ -100,124 +119,247 @@
   .ihint{font-size:.72rem;color:var(--accent)}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
   @media(max-width:430px){.grid2{grid-template-columns:1fr}}
+  .premium{position:relative;border:2px dashed var(--gold);border-radius:18px;padding:1rem;background:var(--gold-soft)}
+  .p-head{display:flex;align-items:center;gap:.6rem;margin-bottom:.7rem}
+  .p-head h2{font-family:var(--display);font-size:1.15rem;margin:0}
+  .pill{font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);background:var(--surface);border:1px solid var(--gold);border-radius:99px;padding:.22rem .55rem}
+  .premium.locked .p-body{filter:blur(4px) grayscale(.5);opacity:.5;pointer-events:none;user-select:none;max-height:300px;overflow:hidden}
+  .p-lock{display:none;position:absolute;inset:0;z-index:6;align-items:center;justify-content:center;padding:1rem}
+  .premium.locked .p-lock{display:flex}
+  .p-lock-card{background:var(--surface);border:1px solid var(--gold);border-radius:16px;box-shadow:var(--shadow);padding:1.2rem;text-align:center;max-width:320px}
+  .p-body{display:flex;flex-direction:column;gap:.8rem}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <p class="eyebrow">Ruta Web / AppSec</p>
-    <h1>Mapa a Junior</h1>
-    <p class="sub">Marca cada paso que completes. Se guarda solo en este dispositivo.</p>
-    <div class="bar"><i id="globalBar"></i></div>
-    <div class="bar-meta"><span id="globalPct"><b>0%</b> listo</span><span id="globalCount">0 / 0</span></div>
+    <div class="rank-row">
+      <span class="badge" id="badge">Aprendiz</span>
+      <div class="rank-info">
+        <div class="lvl">Rango actual · <span id="pctAll">0%</span> del mapa</div>
+        <div class="xp"><span id="xp">0</span> XP</div>
+        <div class="bar"><i id="xpBar"></i></div>
+        <div class="next" id="nextTxt"></div>
+      </div>
+    </div>
   </header>
 
   <main id="app">
 
-    <section data-sec>
-      <div class="s-head"><span class="ico">✅</span><h2>Base ya conseguida</h2><span class="s-count"></span><span class="chev">▼</span></div>
-      <ul>
-        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Laboratorio propio montado</span><small>VMs aisladas en red host-only (Kira Lab)</small></span></label></li>
-        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Ciclo completo de intrusión</span><small>recon → explotación → post-explotación → defensa</small></span></label></li>
-        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Web Cache Deception</span></span></label></li>
-        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Scripting en Python</span><small>scripts propios de explotación</small></span></label></li>
-        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Escribir informes</span><small>ataque y defensa</small></span></label></li>
-        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Herramientas base</span><small>nmap · Burp Suite · Metasploit · sqlmap</small></span></label></li>
-        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Ética y límites legales claros</span></span></label></li>
-      </ul>
-    </section>
+    <!-- ============ NIVEL 1 · JUNIOR ============ -->
+    <div class="tier" data-tier="1">
+      <div class="tier-head"><span class="tier-num">NIVEL 1</span><h2>🥉 Pentester Junior</h2><span class="tier-pct"></span></div>
+      <div class="tier-body">
 
-    <section data-sec>
-      <div class="s-head"><span class="ico">🕸️</span><h2>1 · Amplitud web (OWASP Top 10)</h2><span class="s-count"></span><span class="chev">▼</span></div>
-      <ul>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">XSS</span><small>reflejado, almacenado y DOM</small></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">Control de acceso / IDOR</span><small>fáciles y muy premiados</small></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">Autenticación</span><small>fallos de login, 2FA</small></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">SSRF</span></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">CSRF</span></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">File upload &amp; path traversal</span></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">Command injection</span></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">XXE</span></span></label></li>
-      </ul>
-    </section>
+        <section data-sec>
+          <div class="s-head"><span class="ico">✅</span><h3>Base ya conseguida</h3><span class="s-count"></span><span class="chev">▼</span></div>
+          <ul>
+            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Laboratorio propio montado</span><small>VMs aisladas host-only (Kira Lab)</small></span></label></li>
+            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Ciclo completo de intrusión</span><small>recon → explotación → post-expl → defensa</small></span></label></li>
+            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Web Cache Deception</span></span></label></li>
+            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Scripting en Python</span></span></label></li>
+            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Escribir informes</span></span></label></li>
+            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Herramientas base</span><small>nmap · Burp · Metasploit · sqlmap</small></span></label></li>
+            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Ética y límites legales</span></span></label></li>
+          </ul>
+        </section>
 
-    <section data-sec>
-      <div class="s-head"><span class="ico">💉</span><h2>SQL Injection · 18 labs</h2><span class="s-count"></span><span class="chev">▼</span></div>
-      <ul>
-        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">WHERE clause — datos ocultos</span><small>Apprentice</small></span></label></li>
-        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Login bypass</span><small>Apprentice</small></span></label></li>
-        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Versión BD — Oracle</span></span></label></li>
-        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Versión BD — MySQL/Microsoft</span></span></label></li>
-        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Listar contenido — no-Oracle</span></span></label></li>
-        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Listar contenido — Oracle</span></span></label></li>
-        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">UNION — número de columnas</span></span></label></li>
-        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">UNION — columna con texto</span></span></label></li>
-        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">UNION — datos de otras tablas</span></span></label></li>
-        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">UNION — varios valores en 1 columna</span></span></label></li>
-        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Blind — respuestas condicionales</span></span></label></li>
-        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Blind — errores condicionales</span></span></label></li>
-        <li><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Visible error-based</span></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">Blind — time delays</span></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">Blind — time delays + extracción</span></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">Blind — out-of-band (interacción)</span><small>⚠️ necesita Burp Pro</small></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">Blind — out-of-band (exfiltración)</span><small>⚠️ necesita Burp Pro</small></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">Filter bypass vía XML encoding</span></span></label></li>
-      </ul>
-    </section>
+        <section data-sec>
+          <div class="s-head"><span class="ico">🕸️</span><h3>Amplitud web (OWASP Top 10)</h3><span class="s-count"></span><span class="chev">▼</span></div>
+          <ul>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">XSS</span><small>reflejado, almacenado y DOM</small></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/cross-site-scripting">🧪 Lab</a></div></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Control de acceso / IDOR</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/access-control">🧪 Lab</a></div></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Autenticación</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/authentication">🧪 Lab</a></div></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">SSRF</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/ssrf">🧪 Lab</a></div></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">CSRF</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/csrf">🧪 Lab</a></div></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">File upload &amp; path traversal</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/file-upload">🧪 Lab</a></div></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Command injection</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/os-command-injection">🧪 Lab</a></div></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">XXE</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/xxe">🧪 Lab</a></div></li>
+          </ul>
+        </section>
 
-    <section data-sec>
-      <div class="s-head"><span class="ico">🌐</span><h2>2 · Fundamentos de red e infra</h2><span class="s-count"></span><span class="chev">▼</span></div>
-      <ul>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">TCP/IP, DNS y HTTP a fondo</span></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">Firewalls y segmentación de red</span></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">Active Directory básico</span><small>muchos pentests son de red Windows</small></span></label></li>
-      </ul>
-    </section>
+        <section data-sec>
+          <div class="s-head"><span class="ico">💉</span><h3>SQL Injection · 18 labs</h3><span class="s-count"></span><span class="chev">▼</span></div>
+          <ul>
+            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">WHERE clause — datos ocultos</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/sql-injection">🧪 Lab</a></div></li>
+            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Login bypass</span></span></label></li>
+            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Versión BD — Oracle</span></span></label></li>
+            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Versión BD — MySQL/Microsoft</span></span></label></li>
+            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Listar contenido — no-Oracle</span></span></label></li>
+            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Listar contenido — Oracle</span></span></label></li>
+            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">UNION — número de columnas</span></span></label></li>
+            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">UNION — columna con texto</span></span></label></li>
+            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">UNION — datos de otras tablas</span></span></label></li>
+            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">UNION — varios valores en 1 columna</span></span></label></li>
+            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Blind — respuestas condicionales</span></span></label></li>
+            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Blind — errores condicionales</span></span></label></li>
+            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Visible error-based</span></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Blind — time delays</span></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Blind — time delays + extracción</span></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Blind — out-of-band (interacción)</span><small>⚠️ Burp Pro</small></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Blind — out-of-band (exfiltración)</span><small>⚠️ Burp Pro</small></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Filter bypass vía XML encoding</span></span></label></li>
+          </ul>
+        </section>
 
-    <section data-sec>
-      <div class="s-head"><span class="ico">🖥️</span><h2>3 · Máquinas completas (metodología)</h2><span class="s-count"></span><span class="chev">▼</span></div>
-      <ul>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">Crear perfil en TryHackMe</span></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">Crear perfil en Hack The Box</span></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">Resolver 5+ máquinas en voz alta</span><small>entrena la entrevista práctica</small></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">Completar metodología Fases 2–7</span><small>tu metodologia_pentest.md</small></span></label></li>
-      </ul>
-    </section>
+        <section data-sec>
+          <div class="s-head"><span class="ico">🌐</span><h3>Fundamentos de red</h3><span class="s-count"></span><span class="chev">▼</span></div>
+          <ul>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">TCP/IP, DNS y HTTP a fondo</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://tryhackme.com/module/network-fundamentals">🧪 Lab</a></div></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Firewalls y segmentación</span></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Active Directory básico</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://tryhackme.com/module/hacking-active-directory">🧪 Lab</a></div></li>
+          </ul>
+        </section>
 
-    <section data-sec>
-      <div class="s-head"><span class="ico">📜</span><h2>4 · Certificación</h2><span class="s-count"></span><span class="chev">▼</span></div>
-      <ul>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">Elegir cert junior</span><small>eJPT (práctica) o Security+ (teórica)</small></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">Estudiar y practicar</span></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">Aprobar la certificación</span></span></label></li>
-      </ul>
-    </section>
+        <section data-sec>
+          <div class="s-head"><span class="ico">🖥️</span><h3>Máquinas completas</h3><span class="s-count"></span><span class="chev">▼</span></div>
+          <ul>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Crear perfil en TryHackMe</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://tryhackme.com">🧪 Ir</a></div></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Crear perfil en Hack The Box</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://www.hackthebox.com">🧪 Ir</a></div></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Resolver 5+ máquinas en voz alta</span></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Completar metodología Fases 2–7</span></span></label></li>
+          </ul>
+        </section>
 
-    <section data-sec>
-      <div class="s-head"><span class="ico">👀</span><h2>5 · Portfolio visible <span style="font-weight:400;color:var(--accent)">(prioridad)</span></h2><span class="s-count"></span><span class="chev">▼</span></div>
-      <ul>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">Crear cuenta y repo en GitHub</span></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">Subir tus documentos y scripts</span><small>metodología, referencia SQLi, Kira</small></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">Escribir 5–10 writeups</span></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">Perfil de LinkedIn completo</span></span></label></li>
-        <li><label><input type="checkbox"><span class="txt"><span class="lead">Perfiles THM / HTB públicos en el CV</span></span></label></li>
-      </ul>
-    </section>
+        <section data-sec>
+          <div class="s-head"><span class="ico">📜</span><h3>Certificación junior</h3><span class="s-count"></span><span class="chev">▼</span></div>
+          <ul>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Elegir cert</span><small>eJPT o Security+</small></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://ine.com/security/certifications/ejpt-certification">🔗 eJPT</a></div></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Estudiar y practicar</span></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Aprobar la certificación</span></span></label></li>
+          </ul>
+        </section>
+
+        <section data-sec>
+          <div class="s-head"><span class="ico">👀</span><h3>Portfolio visible</h3><span class="s-count"></span><span class="chev">▼</span></div>
+          <ul>
+            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Crear cuenta y repo en GitHub</span></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Subir documentos y scripts</span></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Escribir 5–10 writeups</span></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">LinkedIn completo</span></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Perfiles THM/HTB en el CV</span></span></label></li>
+          </ul>
+        </section>
+
+      </div>
+    </div>
+
+    <!-- ============ NIVEL 2 · SEMI-SENIOR ============ -->
+    <div class="tier locked" data-tier="2" data-unlock="90">
+      <div class="tier-head"><span class="tier-num">NIVEL 2</span><h2>🥈 Semi-senior</h2><span class="tier-pct"></span></div>
+      <div class="lock-ov"><div class="lock-card"><div class="big">🔒</div><p>Se desbloquea al <b>90%</b> del Nivel 1</p></div></div>
+      <div class="tier-body">
+        <section data-sec>
+          <div class="s-head"><span class="ico">⚔️</span><h3>Autonomía y profundidad</h3><span class="s-count"></span><span class="chev">▼</span></div>
+          <ul>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Pentests completos en solitario</span></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Sacar el OSCP</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://www.offsec.com/courses/pen-200/">🔗 PEN-200</a></div></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Active Directory avanzado</span></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">APIs (REST/GraphQL) a fondo</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/api-testing">🧪 Lab</a></div></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Cloud básico (AWS/Azure)</span></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Code review buscando fallos</span></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Primer reporte válido en bug bounty</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://www.hackerone.com">🔗 HackerOne</a></div></li>
+          </ul>
+        </section>
+      </div>
+    </div>
+
+    <!-- ============ NIVEL 3 · SENIOR ============ -->
+    <div class="tier locked" data-tier="3" data-unlock="90">
+      <div class="tier-head"><span class="tier-num">NIVEL 3</span><h2>🥇 Senior</h2><span class="tier-pct"></span></div>
+      <div class="lock-ov"><div class="lock-card"><div class="big">🔒</div><p>Se desbloquea al <b>90%</b> del Nivel 2</p></div></div>
+      <div class="tier-body">
+        <section data-sec>
+          <div class="s-head"><span class="ico">🎖️</span><h3>Liderazgo y especialización</h3><span class="s-count"></span><span class="chev">▼</span></div>
+          <ul>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Liderar auditorías completas</span></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Mentorizar a juniors</span></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Trato directo con cliente y scoping</span></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Especialización profunda</span><small>web, red team, cloud...</small></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Cert avanzada (OSWE / OSEP / CRTO)</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://www.offsec.com/courses/web-300/">🔗 OSWE</a></div></li>
+          </ul>
+        </section>
+      </div>
+    </div>
+
+    <!-- ============ NIVEL 4 · PRINCIPAL ============ -->
+    <div class="tier locked" data-tier="4" data-unlock="90">
+      <div class="tier-head"><span class="tier-num">NIVEL 4</span><h2>💎 Principal / Especialista</h2><span class="tier-pct"></span></div>
+      <div class="lock-ov"><div class="lock-card"><div class="big">🔒</div><p>Se desbloquea al <b>90%</b> del Nivel 3</p></div></div>
+      <div class="tier-body">
+        <section data-sec>
+          <div class="s-head"><span class="ico">👑</span><h3>Referente del sector</h3><span class="s-count"></span><span class="chev">▼</span></div>
+          <ul>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Research propio / CVEs publicados</span></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Charlas o papers en conferencias</span></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Liderar equipo o ser experto top</span></span></label></li>
+            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Herramientas propias usadas por otros</span></span></label></li>
+          </ul>
+        </section>
+      </div>
+    </div>
+
+    <!-- ============ ESPECIALIZACIONES · PREMIUM ============ -->
+    <div class="premium locked" id="premium">
+      <div class="p-head"><span class="pill">Premium</span><h2>🎯 Especializaciones</h2></div>
+      <div class="p-lock"><div class="p-lock-card">
+        <div style="font-size:2rem">🔒</div>
+        <h3 style="font-family:var(--display);margin:.3rem 0 .2rem">Rutas de especialización</h3>
+        <p style="color:var(--muted);font-size:.85rem;margin:0 0 .8rem">Forense, AppSec avanzado, desarrollo seguro y Red Team. Elige tu especialidad y conviértete en experto.</p>
+        <button class="btn" id="unlockBtn">🔓 Desbloquear</button>
+      </div></div>
+      <div class="p-body">
+        <section data-sec>
+          <div class="s-head"><span class="ico">🔬</span><h3>Forense informático</h3><span class="s-count"></span><span class="chev">▼</span></div>
+          <ul>
+            <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">Adquisición de evidencias y cadena de custodia</span></span></label></li>
+            <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">Análisis de disco (Autopsy / FTK)</span></span></label></li>
+            <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">Análisis de memoria (Volatility)</span></span></label></li>
+            <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">Timeline y recuperación de artefactos</span></span></label></li>
+          </ul>
+        </section>
+        <section data-sec>
+          <div class="s-head"><span class="ico">🕸️</span><h3>AppSec avanzado (web)</h3><span class="s-count"></span><span class="chev">▼</span></div>
+          <ul>
+            <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">SSTI y deserialización insegura</span></span></label></li>
+            <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">JWT / OAuth / SSO a fondo</span></span></label></li>
+            <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">Race conditions y lógica de negocio</span></span></label></li>
+            <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">GraphQL y ataques a APIs</span></span></label></li>
+          </ul>
+        </section>
+        <section data-sec>
+          <div class="s-head"><span class="ico">💻</span><h3>Desarrollo seguro (Java / otros)</h3><span class="s-count"></span><span class="chev">▼</span></div>
+          <ul>
+            <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">Secure coding (OWASP ASVS)</span></span></label></li>
+            <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">Revisión de código / SAST</span></span></label></li>
+            <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">Fallos típicos en Java / Spring</span></span></label></li>
+          </ul>
+        </section>
+        <section data-sec>
+          <div class="s-head"><span class="ico">🔴</span><h3>Red Team</h3><span class="s-count"></span><span class="chev">▼</span></div>
+          <ul>
+            <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">C2 y post-explotación sigilosa</span></span></label></li>
+            <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">Evasión de AV/EDR</span></span></label></li>
+            <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">Phishing y movimiento lateral</span></span></label></li>
+            <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">Ataques a Active Directory</span></span></label></li>
+          </ul>
+        </section>
+      </div>
+    </div>
 
     <footer>
-      <p class="note">Cuando todo esté marcado, tienes de sobra para aplicar a Junior / SOC / analista de vulnerabilidades. No te falta talento — te falta recorrer esta lista.</p>
+      <p class="note">Cada tema enlaza a su lab para practicar 🧪. Marca cuando lo hagas y pega el enlace de tu prueba 🔗 (gana XP extra). Los niveles se desbloquean al 90% del anterior.</p>
       <div class="actions">
         <button class="btn" id="newWriteup">✍️ Nuevo writeup</button>
         <button class="btn ghost" id="genReport">📋 Informe</button>
         <button class="reset" id="reset">Reiniciar</button>
       </div>
-      <p class="note" style="font-size:.74rem">El informe se genera con lo que tengas marcado. Cópialo y pégalo en tu GitHub, LinkedIn o CV.</p>
     </footer>
 
     <div class="overlay" id="reportOverlay" hidden>
       <div class="card">
         <h3>Tu informe de progreso</h3>
-        <p class="hint">Cópialo y pégalo en tu GitHub (README), LinkedIn o CV. Refleja lo que tienes marcado ahora.</p>
+        <p class="hint">Cópialo y pégalo en tu GitHub, LinkedIn o CV.</p>
         <textarea id="reportText" readonly></textarea>
         <div class="row">
           <button class="btn ghost" id="closeReport">Cerrar</button>
@@ -229,7 +371,7 @@
     <div class="overlay" id="writeupOverlay" hidden>
       <div class="card lg">
         <h3>Nuevo writeup</h3>
-        <p class="hint">Rellénalo y pulsa «Generar». Copia el resultado y pégalo en GitHub; ahí arrastras las capturas en los huecos marcados. Se guarda el borrador solo.</p>
+        <p class="hint">Rellénalo y pulsa «Generar». Copia y pega en GitHub; ahí arrastras las capturas en los huecos.</p>
         <div class="scroll">
           <div class="field"><label>Título</label><input id="wu-titulo" placeholder="SQLi ciega — robo de la contraseña del admin"></div>
           <div class="grid2">
@@ -241,12 +383,12 @@
           <div class="field"><label>Resumen</label><textarea id="wu-resumen" placeholder="2-3 frases: qué fallo, qué conseguiste, por qué importa"></textarea></div>
           <div class="field"><label>Objetivo y entorno</label><textarea id="wu-obj" placeholder="Qué había que lograr y en qué app"></textarea></div>
           <div class="field"><label>Reconocimiento / Detección</label><textarea id="wu-recon" placeholder="Cómo descubriste el fallo"></textarea></div>
-          <div class="field"><label>Pie de la captura de detección</label><input id="wu-recon-img" placeholder="Burp mostrando el comportamiento raro"><span class="ihint">↑ crea un hueco de imagen en el writeup</span></div>
-          <div class="field"><label>Explotación (pasos)</label><textarea id="wu-exploit" placeholder="Los pasos del ataque, con sus comandos/payloads"></textarea></div>
+          <div class="field"><label>Pie de la captura de detección</label><input id="wu-recon-img" placeholder="Burp mostrando el comportamiento raro"><span class="ihint">↑ crea un hueco de imagen</span></div>
+          <div class="field"><label>Explotación (pasos)</label><textarea id="wu-exploit" placeholder="Los pasos del ataque, con sus payloads"></textarea></div>
           <div class="field"><label>Pie de la captura del payload</label><input id="wu-img1" placeholder="El payload enviado"></div>
           <div class="field"><label>Pie de la captura del resultado (PoC)</label><input id="wu-img2" placeholder="La contraseña robada / Congratulations"></div>
           <div class="field"><label>Impacto</label><textarea id="wu-impacto" placeholder="Qué podría hacer un atacante real"></textarea></div>
-          <div class="field"><label>Remediación</label><textarea id="wu-rem" placeholder="Cómo se arregla (consultas parametrizadas...)"></textarea></div>
+          <div class="field"><label>Remediación</label><textarea id="wu-rem" placeholder="Cómo se arregla"></textarea></div>
           <div class="field"><label>Lo que aprendí</label><textarea id="wu-aprendi" placeholder="La idea clave que te llevas"></textarea></div>
         </div>
         <textarea id="wu-out" readonly hidden style="min-height:160px"></textarea>
@@ -257,71 +399,141 @@
         </div>
       </div>
     </div>
+
+    <div class="overlay" id="unlockOverlay" hidden>
+      <div class="card">
+        <h3>🔓 Desbloquear especializaciones</h3>
+        <p class="hint">Introduce tu código de acceso para abrir las rutas de especialización.</p>
+        <input id="unlockCode" type="text" placeholder="Tu código" style="font-family:var(--mono);font-size:.95rem;color:var(--fg);background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:.6rem .7rem;width:100%">
+        <p id="unlockMsg" style="margin:0;font-size:.82rem;min-height:1.1em"></p>
+        <div class="row">
+          <button class="btn ghost" id="closeUnlock">Cerrar</button>
+          <button class="btn" id="doUnlock">Desbloquear</button>
+        </div>
+      </div>
+    </div>
   </main>
 </div>
 
+
 <script>
 (function(){
-  var KEY='mapa-junior-v2';
-  var boxes=[].slice.call(document.querySelectorAll('input[type=checkbox]'));
+  var KEY='mapa-carrera-v1';
+  var RANKS=[[0,'Aprendiz'],[60,'Novato'],[150,'Analista'],[260,'Pentester Jr'],[400,'Semi-senior'],[560,'Senior'],[740,'Especialista'],[920,'Leyenda']];
+
+  var items=[].slice.call(document.querySelectorAll('.item'));
+  // stable id per item
   var seen={};
-  boxes.forEach(function(b){
-    var t=((b.parentElement.querySelector('.lead')||{}).textContent||'item')
-          .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,42);
-    var id=t, n=1; while(seen[id]){ id=t+'-'+(++n); } seen[id]=true;
-    b.id='c-'+id;
+  items.forEach(function(it){
+    var t=((it.querySelector('.lead')||{}).textContent||'item').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,42);
+    var id=t,n=1; while(seen[id]){id=t+'-'+(++n);} seen[id]=true;
+    it.dataset.id=id;
   });
 
-  var saved={};
-  try{ var raw=localStorage.getItem(KEY); if(raw) saved=JSON.parse(raw)||{}; }catch(e){}
+  // state
+  var S={checks:{},proofs:{}};
+  try{ var raw=localStorage.getItem(KEY); if(raw){ var p=JSON.parse(raw); S.checks=p.checks||{}; S.proofs=p.proofs||{}; } }catch(e){}
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
 
-  boxes.forEach(function(b){
-    if(saved.hasOwnProperty(b.id)) b.checked=!!saved[b.id];
-    else b.checked=(b.getAttribute('data-default')==='done');
+  // build proof UI + restore
+  items.forEach(function(it){
+    var id=it.dataset.id;
+    var cb=it.querySelector('input[type=checkbox]');
+    cb.checked = S.checks.hasOwnProperty(id) ? !!S.checks[id] : (cb.getAttribute('data-default')==='done');
+    // meta row (create if missing)
+    var meta=it.querySelector('.meta');
+    if(!meta){ meta=document.createElement('div'); meta.className='meta'; it.appendChild(meta); }
+    var pbtn=document.createElement('button'); pbtn.type='button'; pbtn.className='proofBtn'; pbtn.textContent='🔗 prueba';
+    meta.appendChild(pbtn);
+    var pin=document.createElement('input'); pin.type='url'; pin.className='proof'; pin.placeholder='Pega el enlace de tu prueba (writeup, lab resuelto...)';
+    it.appendChild(pin);
+    if(S.proofs[id]){ pin.value=S.proofs[id]; }
+    function syncProof(){
+      var has=!!(pin.value||'').trim();
+      pbtn.classList.toggle('on',has);
+      it.classList.toggle('has-proof',has);
+    }
+    syncProof();
+    pbtn.addEventListener('click',function(e){ e.preventDefault(); pin.classList.toggle('show'); if(pin.classList.contains('show')) pin.focus(); });
+    pin.addEventListener('input',function(){ S.proofs[id]=pin.value.trim(); if(!S.proofs[id]) delete S.proofs[id]; save(); syncProof(); refresh(); });
+    cb.addEventListener('change',function(){ S.checks[id]=cb.checked; save(); refresh(); });
   });
 
-  function persist(){
-    var o={}; boxes.forEach(function(b){ o[b.id]=b.checked; });
-    try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){}
+  function tierPct(tier){
+    var cbs=[].slice.call(tier.querySelectorAll('input[type=checkbox]'));
+    if(!cbs.length) return 0;
+    var d=cbs.filter(function(c){return c.checked;}).length;
+    return Math.round(d/cbs.length*100);
   }
 
   function refresh(){
-    var total=boxes.length, done=boxes.filter(function(b){return b.checked;}).length;
-    var pct= total? Math.round(done/total*100):0;
-    document.getElementById('globalBar').style.width=pct+'%';
-    document.getElementById('globalPct').innerHTML='<b>'+pct+'%</b> listo';
-    document.getElementById('globalCount').textContent=done+' / '+total;
+    var allCbs=items.map(function(it){return it.querySelector('input[type=checkbox]');});
+    var checked=allCbs.filter(function(c){return c.checked;}).length;
+    var proofs=Object.keys(S.proofs).filter(function(k){return S.proofs[k];}).length;
+    var xp=checked*10 + proofs*5;
+    var pctAll=Math.round(checked/allCbs.length*100);
+
+    // rank
+    var rank=RANKS[0][1], cur=0, next=null;
+    for(var i=0;i<RANKS.length;i++){ if(xp>=RANKS[i][0]){ rank=RANKS[i][1]; cur=RANKS[i][0]; next=RANKS[i+1]||null; } }
+    document.getElementById('badge').textContent=rank;
+    document.getElementById('xp').textContent=xp;
+    document.getElementById('pctAll').textContent=pctAll+'%';
+    var barPct = next ? Math.round((xp-cur)/(next[0]-cur)*100) : 100;
+    document.getElementById('xpBar').style.width=barPct+'%';
+    document.getElementById('nextTxt').textContent = next ? ('Siguiente: '+next[1]+' a los '+next[0]+' XP') : '¡Rango máximo alcanzado! 👑';
+
+    // section counts
     document.querySelectorAll('[data-sec]').forEach(function(sec){
-      var bs=[].slice.call(sec.querySelectorAll('input[type=checkbox]'));
-      var d=bs.filter(function(b){return b.checked;}).length;
-      var head=sec.querySelector('.s-head');
-      sec.querySelector('.s-count').textContent=d+'/'+bs.length;
-      head.classList.toggle('done', d===bs.length && bs.length>0);
+      var cbs=[].slice.call(sec.querySelectorAll('input[type=checkbox]'));
+      var d=cbs.filter(function(c){return c.checked;}).length;
+      sec.querySelector('.s-count').textContent=d+'/'+cbs.length;
+      sec.querySelector('.s-head').classList.toggle('done', d===cbs.length && cbs.length>0);
+    });
+
+    // tiers lock/unlock
+    var tiers=[].slice.call(document.querySelectorAll('.tier'));
+    tiers.forEach(function(t){
+      var pct=tierPct(t);
+      t.querySelector('.tier-pct').textContent=pct+'%';
+      var tn=+t.dataset.tier;
+      if(tn===1){ t.classList.remove('locked'); return; }
+      var prev=document.querySelector('.tier[data-tier="'+(tn-1)+'"]');
+      var need=+(t.dataset.unlock||90);
+      var unlocked = prev && tierPct(prev)>=need;
+      t.classList.toggle('locked', !unlocked);
+      t.querySelectorAll('input[type=checkbox]').forEach(function(c){ c.disabled=!unlocked; });
     });
   }
 
-  boxes.forEach(function(b){ b.addEventListener('change', function(){ persist(); refresh(); }); });
-
+  // collapse sections
   document.querySelectorAll('.s-head').forEach(function(h){
     h.addEventListener('click', function(){ h.parentElement.classList.toggle('collapsed'); });
   });
 
   document.getElementById('reset').addEventListener('click', function(){
-    boxes.forEach(function(b){ b.checked=(b.getAttribute('data-default')==='done'); });
-    persist(); refresh();
+    S={checks:{},proofs:{}}; save();
+    items.forEach(function(it){
+      var cb=it.querySelector('input[type=checkbox]'); cb.checked=(cb.getAttribute('data-default')==='done');
+      var pin=it.querySelector('.proof'); if(pin){ pin.value=''; pin.classList.remove('show'); }
+      var pb=it.querySelector('.proofBtn'); if(pb) pb.classList.remove('on');
+      it.classList.remove('has-proof');
+    });
+    refresh();
   });
 
-  // ---- Informe de progreso ----
+  // ---- Informe ----
   function buildReport(){
     var secs=[].slice.call(document.querySelectorAll('[data-sec]'));
-    var done=[], pend=[], totalDone=0, total=0;
+    var done=[], pend=[], totalDone=0, total=0, proofs=0;
     secs.forEach(function(sec){
-      var title=sec.querySelector('.s-head h2').textContent.trim().replace(/\s+/g,' ');
-      var bs=[].slice.call(sec.querySelectorAll('input[type=checkbox]'));
+      var title=sec.querySelector('.s-head h3').textContent.trim().replace(/\s+/g,' ');
+      var its=[].slice.call(sec.querySelectorAll('.item'));
       var ds=[], ps=[];
-      bs.forEach(function(b){
-        var t=((b.parentElement.querySelector('.lead')||{}).textContent||'').trim();
-        total++; if(b.checked){ totalDone++; ds.push(t);} else ps.push(t);
+      its.forEach(function(it){
+        var cb=it.querySelector('input[type=checkbox]'); var t=((it.querySelector('.lead')||{}).textContent||'').trim();
+        var pr=S.proofs[it.dataset.id];
+        total++; if(cb.checked){ totalDone++; if(pr){proofs++; ds.push(t+' ([prueba]('+pr+'))');} else ds.push(t);} else ps.push(t);
       });
       if(ds.length){ done.push('### '+title); ds.forEach(function(t){done.push('- '+t);}); done.push(''); }
       if(ps.length){ pend.push('### '+title); ps.forEach(function(t){pend.push('- '+t);}); pend.push(''); }
@@ -329,58 +541,43 @@
     var pct= total? Math.round(totalDone/total*100):0;
     var d=new Date(), fecha=('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear();
     var o=[];
-    o.push('# Mi camino hacia Pentester Junior','');
-    o.push('**Progreso: '+pct+'% ('+totalDone+'/'+total+' pasos)** · actualizado '+fecha,'');
-    o.push('Formación continua en seguridad web / AppSec: laboratorio propio aislado (red host-only), práctica en PortSwigger Web Security Academy y scripting de explotación en Python.','');
+    o.push('# Mi camino en ciberseguridad ofensiva','');
+    o.push('**Progreso: '+pct+'% ('+totalDone+'/'+total+' pasos · '+proofs+' con prueba)** · actualizado '+fecha,'');
+    o.push('Formación continua en seguridad web / AppSec: laboratorio propio aislado, práctica en PortSwigger, TryHackMe/HTB y scripting en Python.','');
     o.push('## Conseguido','');
     o=o.concat(done);
     if(pend.length){ o.push('## Aprendiendo ahora',''); o=o.concat(pend); }
     return o.join('\n').replace(/\n{3,}/g,'\n\n').trim()+'\n';
   }
   var ov=document.getElementById('reportOverlay');
-  document.getElementById('genReport').addEventListener('click', function(){
-    var ta=document.getElementById('reportText');
-    ta.value=buildReport(); ov.hidden=false; ta.focus(); ta.select();
-  });
+  document.getElementById('genReport').addEventListener('click', function(){ var ta=document.getElementById('reportText'); ta.value=buildReport(); ov.hidden=false; ta.focus(); ta.select(); });
   document.getElementById('closeReport').addEventListener('click', function(){ ov.hidden=true; });
   ov.addEventListener('click', function(e){ if(e.target===ov) ov.hidden=true; });
   document.getElementById('copyReport').addEventListener('click', function(){
     var ta=document.getElementById('reportText'), btn=this; ta.focus(); ta.select();
     function ok(){ btn.textContent='¡Copiado!'; setTimeout(function(){btn.textContent='Copiar';},1500); }
-    try{
-      if(navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(ta.value).then(ok).catch(function(){ try{document.execCommand('copy');ok();}catch(e){} });
-      } else { document.execCommand('copy'); ok(); }
-    }catch(e){ try{document.execCommand('copy'); ok();}catch(e2){} }
+    try{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(ta.value).then(ok).catch(function(){try{document.execCommand('copy');ok();}catch(e){}}); } else { document.execCommand('copy'); ok(); } }catch(e){ try{document.execCommand('copy');ok();}catch(e2){} }
   });
 
-  // ---- Compositor de writeups ----
-  var WUKEY='mapa-junior-writeup';
+  // ---- Writeup composer ----
+  var WUKEY='mapa-carrera-writeup';
   var wuIds=['titulo','tipo','plat','dif','tools','resumen','obj','recon','recon-img','exploit','img1','img2','impacto','rem','aprendi'];
   function wuEl(k){return document.getElementById('wu-'+k);}
   try{ var wd=JSON.parse(localStorage.getItem(WUKEY)||'{}'); wuIds.forEach(function(k){ if(wd[k]!=null && wuEl(k)) wuEl(k).value=wd[k]; }); }catch(e){}
   function wuSave(){ var o={}; wuIds.forEach(function(k){ if(wuEl(k)) o[k]=wuEl(k).value; }); try{localStorage.setItem(WUKEY,JSON.stringify(o));}catch(e){} }
   wuIds.forEach(function(k){ var el=wuEl(k); if(el) el.addEventListener('input', wuSave); });
-
   function imgLine(cap){ return cap? ('\n> 📸 **Captura:** '+cap+'  _(arrastra aquí la imagen en GitHub)_\n') : ''; }
   function buildWriteup(){
     function v(k){ return (wuEl(k).value||'').trim(); }
     var o=[];
     o.push('# '+(v('titulo')||'[Título]'),'');
     o.push('| | |','|---|---|');
-    o.push('| **Tipo** | '+(v('tipo')||'—')+' |');
-    o.push('| **Plataforma** | '+(v('plat')||'—')+' |');
-    o.push('| **Dificultad** | '+(v('dif')||'—')+' |');
-    o.push('| **Herramientas** | '+(v('tools')||'—')+' |','');
-    o.push('## Resumen', v('resumen'), '');
-    o.push('## Objetivo y entorno', v('obj'), '');
-    o.push('## 1 · Reconocimiento / Detección', v('recon'));
-    o.push(imgLine(v('recon-img')));
-    o.push('## 2 · Explotación', v('exploit'));
-    o.push(imgLine(v('img1')));
-    o.push(imgLine(v('img2')));
-    o.push('## 3 · Impacto', v('impacto'), '');
-    o.push('## 4 · Cómo se arregla (remediación)', v('rem'), '');
+    o.push('| **Tipo** | '+(v('tipo')||'—')+' |'); o.push('| **Plataforma** | '+(v('plat')||'—')+' |');
+    o.push('| **Dificultad** | '+(v('dif')||'—')+' |'); o.push('| **Herramientas** | '+(v('tools')||'—')+' |','');
+    o.push('## Resumen', v('resumen'), ''); o.push('## Objetivo y entorno', v('obj'), '');
+    o.push('## 1 · Reconocimiento / Detección', v('recon')); o.push(imgLine(v('recon-img')));
+    o.push('## 2 · Explotación', v('exploit')); o.push(imgLine(v('img1'))); o.push(imgLine(v('img2')));
+    o.push('## 3 · Impacto', v('impacto'), ''); o.push('## 4 · Cómo se arregla (remediación)', v('rem'), '');
     o.push('## Lo que aprendí', v('aprendi'), '');
     o.push('---','<sub>Realizado en entorno de laboratorio / con autorización. Solo con fines educativos.</sub>');
     return o.join('\n').replace(/\n{3,}/g,'\n\n').trim()+'\n';
@@ -389,14 +586,31 @@
   document.getElementById('newWriteup').addEventListener('click', function(){ wov.hidden=false; });
   document.getElementById('closeWriteup').addEventListener('click', function(){ wov.hidden=true; });
   wov.addEventListener('click', function(e){ if(e.target===wov) wov.hidden=true; });
-  document.getElementById('genWriteup').addEventListener('click', function(){
-    var out=document.getElementById('wu-out'); out.value=buildWriteup(); out.hidden=false;
-    document.getElementById('copyWriteup').hidden=false; out.focus(); out.select();
-  });
+  document.getElementById('genWriteup').addEventListener('click', function(){ var out=document.getElementById('wu-out'); out.value=buildWriteup(); out.hidden=false; document.getElementById('copyWriteup').hidden=false; out.focus(); out.select(); });
   document.getElementById('copyWriteup').addEventListener('click', function(){
     var ta=document.getElementById('wu-out'), btn=this; ta.focus(); ta.select();
     function ok(){ btn.textContent='¡Copiado!'; setTimeout(function(){btn.textContent='Copiar';},1500); }
     try{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(ta.value).then(ok).catch(function(){try{document.execCommand('copy');ok();}catch(e){}}); } else { document.execCommand('copy'); ok(); } }catch(e){ try{document.execCommand('copy');ok();}catch(e2){} }
+  });
+
+  // ---- Premium / especializaciones (desbloqueo por código) ----
+  var UNLOCK_CODE='KIRA-PRO-2026';   // <-- cámbialo por el tuyo
+  var premium=document.getElementById('premium');
+  function setPremium(ok){
+    premium.classList.toggle('locked',!ok);
+    premium.querySelectorAll('.p-body input[type=checkbox]').forEach(function(c){ c.disabled=!ok; });
+  }
+  var pOk=false; try{ pOk=localStorage.getItem('mapa-premium-ok')==='1'; }catch(e){}
+  setPremium(pOk);
+  var uov=document.getElementById('unlockOverlay');
+  document.getElementById('unlockBtn').addEventListener('click',function(){ uov.hidden=false; document.getElementById('unlockCode').focus(); });
+  document.getElementById('closeUnlock').addEventListener('click',function(){ uov.hidden=true; });
+  uov.addEventListener('click',function(e){ if(e.target===uov) uov.hidden=true; });
+  document.getElementById('doUnlock').addEventListener('click',function(){
+    var v=(document.getElementById('unlockCode').value||'').trim().toUpperCase();
+    var msg=document.getElementById('unlockMsg');
+    if(v===UNLOCK_CODE){ try{localStorage.setItem('mapa-premium-ok','1');}catch(e){} setPremium(true); uov.hidden=true; refresh(); }
+    else { msg.style.color='#c0392b'; msg.textContent='Código no válido.'; }
   });
 
   refresh();
