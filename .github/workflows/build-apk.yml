@@ -39,7 +39,7 @@ jobs:
 
       - name: Añadir plataforma Android
         working-directory: cdv
-        run: cordova platform add android@13
+        run: cordova platform add android@14
 
       - name: Añadir plugin de compras (Google Play Billing)
         working-directory: cdv
