@@ -6,16 +6,16 @@
 > Basado en los labs de PortSwigger Web Security Academy.
 
 **Nivel OWASP:** Injection — históricamente top 1-3 del OWASP Top 10.
-**Última actualización:** 2026-11-25
+**Última actualización:** 2026-11-26
 
 ---
 
 ## 📊 Mi progreso en los labs (PortSwigger Web Security Academy)
 
-**Resueltos: 13 / 18** · actualizado 2026-11-25
+**Resueltos: 15 / 18** · actualizado 2026-11-26
 (A = Apprentice · P = Practitioner)
 
-### ✅ Resueltos (13)
+### ✅ Resueltos (15)
 - [x] (A) SQLi en cláusula WHERE — recuperación de datos ocultos
 - [x] (A) SQLi — login bypass
 - [x] (P) Averiguar tipo y versión de BD — Oracle
@@ -26,16 +26,16 @@
 - [x] (P) UNION — encontrar una columna con texto
 - [x] (P) UNION — recuperar datos de otras tablas
 - [x] (P) UNION — recuperar varios valores en una sola columna
-- [x] (P) Blind — respuestas condicionales   🆕
-- [x] (P) Blind — errores condicionales   🆕
-- [x] (P) Visible error-based   🆕
+- [x] (P) Blind — respuestas condicionales
+- [x] (P) Blind — errores condicionales
+- [x] (P) Visible error-based
+- [x] (P) Blind — retardos de tiempo (time delays)   🆕
+- [x] (P) Blind — time delays + extracción de datos   🆕 (script `extraer_password_time.py`)
 
-### ⬜ Pendientes (5)
-- [ ] (P) Blind — retardos de tiempo (time delays)
-- [ ] (P) Blind — time delays + extracción de datos
+### ⬜ Pendientes (3)
+- [ ] (P) Filter bypass vía XML encoding   ← se puede hacer (Burp Community + Hackvertor)
 - [ ] (P) Blind — out-of-band (interacción)   ⚠️ necesita Burp Pro (Collaborator)
 - [ ] (P) Blind — out-of-band (exfiltración)   ⚠️ necesita Burp Pro
-- [ ] (P) Filter bypass vía XML encoding
 
 ---
 
