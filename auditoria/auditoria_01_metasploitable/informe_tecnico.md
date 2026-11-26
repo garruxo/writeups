@@ -88,9 +88,38 @@ getuid   ->  uid=0 (root)
 
 **Referencias:** CVE-2011-2523; CWE-78 (OS Command Injection).
 
-<!-- Siguiente hallazgo: copia este bloque como F-02 -->
+### F-02 · Base de datos MySQL con `root` sin contraseña — 🟠 Alta
 
-### F-02 · [siguiente — pendiente de explotar]
+| Campo | Valor |
+|---|---|
+| **CVSS 3.1** | 8.6 (`AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:L`) |
+| **Componente** | MySQL — 3306/tcp |
+| **CWE** | CWE-521 / CWE-1188 (credenciales débiles / config insegura) |
+
+**Descripción.** El servicio MySQL acepta el inicio de sesión del usuario `root` **sin contraseña** desde la red, concediendo control total de la base de datos a cualquier atacante.
+
+**Pasos de reproducción (PoC):**
+```
+mysql -h 192.168.56.104 -u root --skip-ssl
+show databases;
+```
+(`--skip-ssl` evita el error TLS del cliente moderno contra el MySQL antiguo.)
+
+![Evidencia F-02: prompt mysql> y listado de bases de datos](EVIDENCIA_f02_mysql.png)
+*Pie: acceso como root sin contraseña y enumeración de bases de datos.*
+
+**Impacto.** Lectura, modificación o borrado de **todos los datos** de la aplicación (usuarios, credenciales, pedidos…) por cualquier equipo de la red.
+
+**Remediación.**
+- Asignar una **contraseña fuerte** a `root` y a todas las cuentas de MySQL.
+- Enlazar el servicio a `localhost` o restringir 3306 por firewall.
+- Eliminar usuarios anónimos y aplicar **mínimos privilegios**.
+
+**Referencias:** CWE-521; OWASP ASVS V2.
+
+<!-- Siguiente hallazgo: copia este bloque como F-03 -->
+
+### F-03 · [siguiente — pendiente de explotar]
 
 ## 7. Conclusiones
 [Al final: causa raíz, prioridad, re-test.]
