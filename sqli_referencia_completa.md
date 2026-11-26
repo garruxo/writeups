@@ -12,10 +12,12 @@
 
 ## 📊 Mi progreso en los labs (PortSwigger Web Security Academy)
 
-**Resueltos: 15 / 18** · actualizado 2026-11-26
+**Resueltos: 16 / 18** · actualizado 2026-11-26
 (A = Apprentice · P = Practitioner)
+> Las 2 que faltan son **out-of-band** y requieren **Burp Pro (Collaborator)**:
+> 16/18 es el máximo alcanzable con Burp Community. ✅
 
-### ✅ Resueltos (15)
+### ✅ Resueltos (16)
 - [x] (A) SQLi en cláusula WHERE — recuperación de datos ocultos
 - [x] (A) SQLi — login bypass
 - [x] (P) Averiguar tipo y versión de BD — Oracle
@@ -30,12 +32,18 @@
 - [x] (P) Blind — errores condicionales
 - [x] (P) Visible error-based
 - [x] (P) Blind — retardos de tiempo (time delays)   🆕
-- [x] (P) Blind — time delays + extracción de datos   🆕 (script `extraer_password_time.py`)
+- [x] (P) Blind — time delays + extracción de datos   (script `extraer_password_time.py`)
+- [x] (P) Filter bypass vía XML encoding   🆕 (Burp + Hackvertor: `<@hex_entities>`)
 
-### ⬜ Pendientes (3)
-- [ ] (P) Filter bypass vía XML encoding   ← se puede hacer (Burp Community + Hackvertor)
-- [ ] (P) Blind — out-of-band (interacción)   ⚠️ necesita Burp Pro (Collaborator)
-- [ ] (P) Blind — out-of-band (exfiltración)   ⚠️ necesita Burp Pro
+### ⬜ Pendientes (2) — necesitan Burp Pro
+- [ ] (P) Blind — out-of-band (interacción)   ⚠️ Collaborator (Burp Pro)
+- [ ] (P) Blind — out-of-band (exfiltración)   ⚠️ Collaborator (Burp Pro)
+
+> **Técnica XML encoding (lab resuelto):** la web procesa XML y un WAF bloquea
+> `UNION`/`SELECT`. Se envuelve el payload en `<storeId>` con Hackvertor
+> `<@hex_entities>1 UNION SELECT username||'~'||password FROM users<@/hex_entities></storeId>`:
+> el WAF ve entidades `&#x..;` (no las palabras), pero el parser XML las decodifica
+> y el SQL se ejecuta. Defensa: no permitir entidades externas/decodificación antes del WAF.
 
 ---
 
