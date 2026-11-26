@@ -41,6 +41,10 @@ jobs:
         working-directory: cdv
         run: cordova platform add android@13
 
+      - name: Añadir plugin de compras (Google Play Billing)
+        working-directory: cdv
+        run: cordova plugin add cordova-plugin-purchase@13 --save
+
       - name: Firmar siempre con la misma clave + versión creciente
         working-directory: cdv
         run: |
