@@ -36,11 +36,34 @@ whatweb http://localhost:3000
 ## 3. Resumen de hallazgos
 | ID | Hallazgo | Severidad | CVSS |
 |---|---|:---:|:---:|
-| F-01 | [ ] | [ ] | [ ] |
+| F-01 | SQLi en el login → acceso como administrador | 🔴 Crítica | 9.8 |
+| F-02 | SQLi en el buscador → robo de datos de clientes | 🔴 Crítica | 9.8 |
 
-## 4. Hallazgos detallados (se rellenan al explotar)
+## 4. Hallazgos detallados
 
-### F-01 · [pendiente]
+### F-01 · Inyección SQL en el login (acceso como administrador) — 🔴 Crítica
+
+| Campo | Valor |
+|---|---|
+| **CVSS 3.1** | 9.8 — bypass de autenticación |
+| **Componente** | Formulario de login (`POST /rest/user/login`) |
+| **OWASP** | A03:2021 – Injection · CWE-89 |
+
+**Descripción.** El campo de email del login se concatena en la consulta SQL sin sanear. Inyectando una condición siempre verdadera se **omite la autenticación** y se accede como el primer usuario (administrador).
+
+**Pasos de reproducción (PoC):**
+```
+En el campo Email:  ' OR 1=1--
+En Password:        cualquier cosa
+-> Inicia sesión como administrador (admin@juice-sh.op)
+```
+![Evidencia F-01: sesión iniciada como admin](EVIDENCIA_f01_admin.png)
+
+**Impacto.** Acceso total a la cuenta de administrador sin credenciales: gestión de la tienda, pedidos y datos.
+
+**Remediación.** Consultas parametrizadas en la autenticación; nunca concatenar la entrada. Bloqueo de intentos y 2FA.
+
+### F-02 · [en progreso — robo de datos vía SQLi en el buscador]
 
 ## 5. Conclusiones
 [Al final.]
