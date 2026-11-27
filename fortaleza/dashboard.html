@@ -28,6 +28,8 @@
   .ip{font-weight:700}
   .badge{font-size:10px;padding:2px 6px;border-radius:10px;background:#20304a;color:var(--mut)}
   .badge.exp{background:var(--rojo);color:#fff}
+  .badge.fr{background:#7c3aed;color:#fff;margin-right:5px}
+  .fila.fr{border-color:#7c3aed}
   .bar{height:6px;border-radius:4px;background:#20304a;margin:7px 0 4px;overflow:hidden}
   .bar span{display:block;height:100%;background:linear-gradient(90deg,var(--amb),var(--rojo))}
   .meta{font-size:11px;color:var(--mut);display:flex;justify-content:space-between}
@@ -101,12 +103,13 @@ function pinta(lista){
   if(!lista.length){ cont.innerHTML='<div class="empty">Sin ataques todavía.</div>'; }
   else cont.innerHTML = lista.map(a=>{
     const pct = Math.min(a.sospecha/8*100,100);
-    return `<div class="fila ${a.expulsado?'exp':''}">
+    const fb = a.frontera_cerrada ? '<span class="badge fr">🚧 FRONTERA</span>' : '';
+    return `<div class="fila ${a.expulsado?'exp':''} ${a.frontera_cerrada?'fr':''}">
       <div class="top"><span class="ip">${a.ip}</span>
-        <span class="badge ${a.expulsado?'exp':''}">${a.expulsado?'EXPULSADO':'vigilado'}</span></div>
+        <span>${fb}<span class="badge ${a.expulsado?'exp':''}">${a.expulsado?'EXPULSADO':'vigilado'}</span></span></div>
       <div class="bar"><span style="width:${pct}%"></span></div>
       <div class="meta"><span>sospecha ${a.sospecha} · ${a.n_eventos} ev.</span>
-        <span>${MOTIVOS[a.ultimo]||a.ultimo||''} · hace ${a.hace_seg}s</span></div>
+        <span>${a.origen||''} · ${MOTIVOS[a.ultimo]||a.ultimo||''}</span></div>
     </div>`;
   }).join('');
   // mapa
@@ -131,11 +134,11 @@ document.getElementById('demo').onclick = ()=>{
   document.getElementById('demo').textContent = demo ? '■ Parar demo' : '▶ Demo';
   if(!demo){ tick(); return; }
   const fake=[
-    {ip:"185.220.101.4",sospecha:8,expulsado:true,n_eventos:6,ultimo:"waf_sqli",hace_seg:2,_g:{lat:52.5,lon:13.4,label:"Berlín DE"}},
-    {ip:"45.148.10.9",sospecha:6,expulsado:true,n_eventos:5,ultimo:"scanner",hace_seg:8,_g:{lat:55.75,lon:37.6,label:"Moscú RU"}},
-    {ip:"103.21.44.2",sospecha:4,expulsado:false,n_eventos:3,ultimo:"ia_anomalia",hace_seg:4,_g:{lat:39.9,lon:116.4,label:"Pekín CN"}},
-    {ip:"200.89.75.1",sospecha:3,expulsado:false,n_eventos:2,ultimo:"login_fallido",hace_seg:12,_g:{lat:-34.6,lon:-58.4,label:"Buenos Aires AR"}},
-    {ip:"41.60.20.8",sospecha:7,expulsado:true,n_eventos:5,ultimo:"honeytoken",hace_seg:1,_g:{lat:6.5,lon:3.4,label:"Lagos NG"}},
+    {ip:"185.220.101.4",origen:"185.220.101.0/24",frontera_cerrada:true,sospecha:8,expulsado:true,n_eventos:6,ultimo:"waf_sqli",hace_seg:2,_g:{lat:52.5,lon:13.4,label:"Berlín DE"}},
+    {ip:"45.148.10.9",origen:"45.148.10.0/24",frontera_cerrada:true,sospecha:6,expulsado:true,n_eventos:5,ultimo:"scanner",hace_seg:8,_g:{lat:55.75,lon:37.6,label:"Moscú RU"}},
+    {ip:"103.21.44.2",origen:"103.21.44.0/24",frontera_cerrada:false,sospecha:4,expulsado:false,n_eventos:3,ultimo:"ia_anomalia",hace_seg:4,_g:{lat:39.9,lon:116.4,label:"Pekín CN"}},
+    {ip:"200.89.75.1",origen:"200.89.75.0/24",frontera_cerrada:false,sospecha:3,expulsado:false,n_eventos:2,ultimo:"login_fallido",hace_seg:12,_g:{lat:-34.6,lon:-58.4,label:"Buenos Aires AR"}},
+    {ip:"41.60.20.8",origen:"41.60.20.0/24",frontera_cerrada:true,sospecha:7,expulsado:true,n_eventos:5,ultimo:"honeytoken",hace_seg:1,_g:{lat:6.5,lon:3.4,label:"Lagos NG"}},
   ];
   fake.forEach(a=>geocache[a.ip]=a._g);
   pinta(fake);

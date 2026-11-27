@@ -5,7 +5,7 @@ Web deliberadamente BLINDADA para practicar defensa en entorno seguro.
 Autor: Daniel Garrucho Garcia
 Dependencias: solo Flask.  Hashing: hashlib.scrypt (libreria estandar).
 """
-import hashlib, hmac, os, sqlite3, time, logging, re, threading, secrets, html
+import hashlib, hmac, os, sqlite3, time, logging, re, threading, secrets, html, ipaddress
 from collections import defaultdict
 from urllib.parse import unquote_plus
 from flask import Flask, request, jsonify, Response, g
@@ -138,6 +138,51 @@ def es_https():
     # True si la peticion llega por HTTPS (directo o via proxy nginx)
     return request.is_secure or request.headers.get("X-Forwarded-Proto", "") == "https"
 
+# ---- Cuarta capa: "Extranjeria" (control fronterizo por ORIGEN) ----------
+# Cuando se expulsa a un IP, investiga su ORIGEN (subred) y, si de ese mismo
+# origen vienen varias expulsiones, CIERRA LA FRONTERA a toda la subred: el
+# atacante no vuelve ni cambiando de IP dentro de su rango.
+FRONTERA_UMBRAL = 2        # expulsiones desde un origen para cerrar su frontera
+FRONTERA_SEG = 86400       # bloqueo fronterizo: 24 h
+
+def es_privada(ip):
+    try:
+        a = ipaddress.ip_address(ip)
+        return a.is_private or a.is_loopback or a.is_link_local
+    except ValueError:
+        return True   # IP rara -> no cerramos fronteras por ella
+
+def subred(ip):
+    """Origen del atacante: /24 en IPv4, /64 en IPv6."""
+    try:
+        a = ipaddress.ip_address(ip)
+        pref = 24 if a.version == 4 else 64
+        return str(ipaddress.ip_network(f"{ip}/{pref}", strict=False))
+    except ValueError:
+        return ip
+
+def extranjeria(ip, motivo):
+    """Al expulsar: marca el origen; si reincide, cierra la frontera (subred)."""
+    if es_privada(ip):
+        return                                   # no se cierran fronteras a la LAN propia
+    red = subred(ip)
+    f = ALM.jget(f"front:{red}") or {"subred": red, "ips": [], "expulsiones": 0,
+                                     "desde": time.time(), "bloqueada": False, "hasta": 0}
+    f["expulsiones"] += 1
+    if ip not in f["ips"]:
+        f["ips"].append(ip)
+    if f["expulsiones"] >= FRONTERA_UMBRAL and not f["bloqueada"]:
+        f["bloqueada"] = True
+        f["hasta"] = time.time() + FRONTERA_SEG
+        alerta("FRONTERA_CERRADA", f"origen={red} motivo={motivo} ips={len(f['ips'])}")
+    ALM.jset(f"front:{red}", f, ttl=FRONTERA_SEG)
+
+def frontera_cerrada(ip):
+    if es_privada(ip):
+        return False
+    f = ALM.jget(f"front:{subred(ip)}")
+    return bool(f and f.get("bloqueada") and time.time() < f["hasta"])
+
 def strike(motivo, extra=""):
     """Abre/actualiza el expediente del IP (en el almacen) y lo expulsa si cruza el umbral."""
     ip = _ip(); now = time.time()
@@ -151,6 +196,7 @@ def strike(motivo, extra=""):
     if e["sospecha"] >= UMBRAL_EXPULSION and now > e["baneado_hasta"]:
         e["baneado_hasta"] = now + BAN_SEG
         alerta("EXPULSADO", f"sospecha={e['sospecha']}")
+        extranjeria(ip, motivo)                 # -> investiga el origen y cierra frontera si reincide
     ALM.jset(f"exp:{ip}", e, ttl=EXP_TTL)
 
 # ---- Cerebro IA: deteccion de anomalias (complementa al WAF por firmas) ---
@@ -169,6 +215,10 @@ def guardia():
     if request.path in ("/mapa", "/api/ataques"):
         return
     ip = _ip(); now = time.time()
+    # 0) Frontera cerrada a su ORIGEN -> cortado en la frontera (ni entra)
+    if frontera_cerrada(ip):
+        time.sleep(2)
+        return jsonify(error="Origen bloqueado en frontera"), 403
     e = ALM.jget(f"exp:{ip}")
     # 1) ¿ya expulsado? -> tarpit (lo pega) + 403
     if e and now < e["baneado_hasta"]:
@@ -358,10 +408,13 @@ def api_ataques():
         e = ALM.jget(k)
         if not e:
             continue
+        ip = k.split("exp:", 1)[1]
         datos.append({
-            "ip": k.split("exp:", 1)[1],
+            "ip": ip,
             "sospecha": e["sospecha"],
             "expulsado": now < e["baneado_hasta"],
+            "origen": subred(ip),
+            "frontera_cerrada": frontera_cerrada(ip),
             "n_eventos": len(e["eventos"]),
             "ultimo": e["eventos"][-1]["motivo"] if e["eventos"] else None,
             "hace_seg": round(now - e["ultima"]),

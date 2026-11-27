@@ -21,7 +21,12 @@ Laboratorio de **defensa activa** (legal, dentro del propio perímetro) para por
 - [x] **Tercer cerebro ("no me fio de ti")** — expediente por IP con sospecha
   ponderada; al cruzar el umbral EXPULSA al intruso. `/api/ataques` (JSON).
 - [x] **Mapa de ataques en vivo** (`dashboard.html` en `/mapa`) — panel SOC con
-  expedientes, barras de sospecha y mapamundi (geolocaliza IPs publicas).
+  expedientes, barras de sospecha, badges de frontera y mapamundi.
+- [x] **Cuarta capa "Extranjeria"** — al expulsar, investiga el ORIGEN (subred);
+  si reincide, CIERRA LA FRONTERA a toda la subred (no vuelve ni cambiando de
+  IP). No se cierran fronteras a la LAN propia (IPs privadas exentas).
+- [x] **Panel con subcarpetas** (`fortaleza.sh`): Control / Analisis / IA /
+  Produccion. Sin comandos que recordar.
 
 ## Produccion (nivel experto) — ver PRODUCCION.md
 - [x] **Estado compartido** (`almacen.py`): Redis o memoria (fallback). Sesiones,
