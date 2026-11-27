@@ -54,10 +54,13 @@ nadie la falsee. Y `X-Forwarded-Proto: https` activa la cookie `Secure`.
   funcionalidad sigue igual). El backend Redis usa llamadas estándar de
   `redis-py`; verifícalo en tu Kali arrancando con `REDIS_URL`.
 
-## Pendiente / notas honestas
+## Notas honestas
 
-- Las escrituras del expediente son lee-modifica-escribe (no atómicas); con
-  mucha concurrencia convendría usar operaciones atómicas de Redis.
-- El contador de `/stream` podría quedar descuadrado si un worker muere a mitad;
-  en real se le pondría un TTL o un recuento periódico.
+- **Estado atómico (resuelto):** el expediente usa contador (`incrby`), lista de
+  eventos (`lpush`) y clave de baneo con TTL -> sin lee-modifica-escribe, sin
+  carreras. El `MemStore` de desarrollo va protegido con lock.
+- **Mensajes y mapa (resuelto):** el muro vive en el almacen (compartido, acotado
+  a 50); `/mapa` y `/api/ataques` solo desde la LAN propia o siendo admin.
+- El contador de `/stream` podría descuadrarse si un worker muere a mitad de una
+  conexión (caso extremo, impacto menor y autolimitado).
 - El certificado es autofirmado (laboratorio). En real: Let's Encrypt.

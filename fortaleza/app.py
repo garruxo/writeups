@@ -5,7 +5,7 @@ Web deliberadamente BLINDADA para practicar defensa en entorno seguro.
 Autor: Daniel Garrucho Garcia
 Dependencias: solo Flask.  Hashing: hashlib.scrypt (libreria estandar).
 """
-import hashlib, hmac, os, sqlite3, time, logging, re, threading, secrets, html, ipaddress
+import hashlib, hmac, os, sqlite3, time, logging, re, threading, secrets, html, ipaddress, json
 from collections import defaultdict
 from urllib.parse import unquote_plus
 from flask import Flask, request, jsonify, Response, g
@@ -184,20 +184,18 @@ def frontera_cerrada(ip):
     return bool(f and f.get("bloqueada") and time.time() < f["hasta"])
 
 def strike(motivo, extra=""):
-    """Abre/actualiza el expediente del IP (en el almacen) y lo expulsa si cruza el umbral."""
+    """Actualiza el expediente del IP (ATOMICO) y lo expulsa si cruza el umbral.
+    sospecha -> contador incrby; eventos -> lista lpush; baneo -> clave con TTL.
+    Sin lee-modifica-escribe -> sin carreras de concurrencia."""
     ip = _ip(); now = time.time()
-    e = ALM.jget(f"exp:{ip}") or {"sospecha": 0, "eventos": [],
-                                  "primera": now, "ultima": now, "baneado_hasta": 0}
-    e["sospecha"] += PESOS.get(motivo, 1)
-    e["ultima"] = now
-    e["eventos"].append({"t": now, "motivo": motivo, "path": request.path, "extra": extra})
-    e["eventos"] = e["eventos"][-50:]
+    sosp = ALM.incrby(f"susp:{ip}", PESOS.get(motivo, 1), ttl=EXP_TTL)
+    ALM.lpush(f"ev:{ip}", json.dumps({"t": now, "motivo": motivo,
+              "path": request.path, "extra": extra}), maxlen=50, ttl=EXP_TTL)
     alerta(motivo, extra)
-    if e["sospecha"] >= UMBRAL_EXPULSION and now > e["baneado_hasta"]:
-        e["baneado_hasta"] = now + BAN_SEG
-        alerta("EXPULSADO", f"sospecha={e['sospecha']}")
-        extranjeria(ip, motivo)                 # -> investiga el origen y cierra frontera si reincide
-    ALM.jset(f"exp:{ip}", e, ttl=EXP_TTL)
+    if sosp >= UMBRAL_EXPULSION and not ALM.get(f"ban:{ip}"):
+        ALM.set(f"ban:{ip}", "1", ttl=BAN_SEG)   # el TTL gestiona la 2a oportunidad
+        alerta("EXPULSADO", f"sospecha={sosp}")
+        extranjeria(ip, motivo)                  # investiga el origen y cierra frontera si reincide
 
 # ---- Cerebro IA: deteccion de anomalias (complementa al WAF por firmas) ---
 try:
@@ -214,19 +212,15 @@ def guardia():
     # en una interfaz separada y protegida por rol admin.
     if request.path in ("/mapa", "/api/ataques"):
         return
-    ip = _ip(); now = time.time()
+    ip = _ip()
     # 0) Frontera cerrada a su ORIGEN -> cortado en la frontera (ni entra)
     if frontera_cerrada(ip):
         time.sleep(2)
         return jsonify(error="Origen bloqueado en frontera"), 403
-    e = ALM.jget(f"exp:{ip}")
-    # 1) ¿ya expulsado? -> tarpit (lo pega) + 403
-    if e and now < e["baneado_hasta"]:
+    # 1) ¿ya expulsado? (clave ban con TTL; al expirar, 2a oportunidad sola)
+    if ALM.get(f"ban:{ip}"):
         time.sleep(2)
         return jsonify(error="IP expulsada"), 403
-    if e and e["baneado_hasta"] and now >= e["baneado_hasta"]:
-        e["sospecha"] = 0; e["baneado_hasta"] = 0   # cumplido el castigo, 2a oportunidad
-        ALM.jset(f"exp:{ip}", e, ttl=EXP_TTL)
     # 2) herramienta de ataque por el User-Agent
     ua = request.headers.get("User-Agent", "")
     if SCANNERS.search(ua):
@@ -386,50 +380,62 @@ def logout():
     return resp
 
 # ---- Muro de mensajes (sitio donde probar XSS almacenado) ----------------
-MENSAJES = []
+# Los mensajes viven en el almacen (compartido entre workers, acotado a 50).
 
 @app.route("/muro", methods=["GET", "POST"])
 def muro():
     if request.method == "POST":
         autor = (request.form.get("autor") or "anon")[:40]
         msg = (request.form.get("mensaje") or "")[:500]
-        MENSAJES.append((autor, msg))
-        del MENSAJES[:-50]                          # no crecer sin limite (memoria)
+        ALM.lpush("mensajes", json.dumps([autor, msg]), maxlen=50)
         return jsonify(ok=True)
     # GET: se renderiza ESCAPANDO la salida (html.escape) -> el contenido del
     # usuario se muestra como TEXTO, nunca como HTML/JS ejecutable.
+    msgs = [json.loads(x) for x in ALM.lrange("mensajes")]
     filas = "".join(
-        f"<li><b>{html.escape(a)}</b>: {html.escape(m)}</li>" for a, m in MENSAJES[-50:])
+        f"<li><b>{html.escape(a)}</b>: {html.escape(m)}</li>" for a, m in msgs)
     return Response(
         "<!doctype html><meta charset=utf-8><title>Muro</title>"
         "<h1>Muro de mensajes</h1><ul>" + filas + "</ul>", mimetype="text/html")
 
 # ---- Mapa de ataques: datos (JSON) + panel (HTML) ------------------------
+def monitor_permitido():
+    # El panel/datos de monitorizacion: solo desde la LAN propia o siendo admin.
+    # Asi un atacante remoto no puede leer el estado de la defensa.
+    return es_privada(_ip()) or (sesion_actual() or {}).get("rol") == "admin"
+
 @app.route("/api/ataques")
 def api_ataques():
+    if not monitor_permitido():
+        return jsonify(error="Solo admin o red local"), 403
     now = time.time()
     datos = []
-    for k in ALM.keys("exp:"):
-        e = ALM.jget(k)
-        if not e:
-            continue
-        ip = k.split("exp:", 1)[1]
+    for k in ALM.keys("susp:"):
+        ip = k.split("susp:", 1)[1]
+        sosp = int(ALM.get(k) or 0)
+        evs = [json.loads(x) for x in ALM.lrange(f"ev:{ip}")]   # mas nuevo primero
+        ult = evs[0] if evs else None
         datos.append({
             "ip": ip,
-            "sospecha": e["sospecha"],
-            "expulsado": now < e["baneado_hasta"],
+            "sospecha": sosp,
+            "expulsado": bool(ALM.get(f"ban:{ip}")),
             "origen": subred(ip),
             "frontera_cerrada": frontera_cerrada(ip),
-            "n_eventos": len(e["eventos"]),
-            "ultimo": e["eventos"][-1]["motivo"] if e["eventos"] else None,
-            "hace_seg": round(now - e["ultima"]),
-            "eventos": e["eventos"][-8:],
+            "n_eventos": len(evs),
+            "ultimo": ult["motivo"] if ult else None,
+            "hace_seg": round(now - ult["t"]) if ult else 0,
+            "eventos": evs[:8],
         })
     datos.sort(key=lambda d: -d["sospecha"])
     return jsonify(datos)
 
 @app.route("/mapa")
 def mapa():
+    if not monitor_permitido():
+        return Response("<!doctype html><meta charset=utf-8><title>Mapa</title>"
+                        "<p style='font-family:sans-serif'>Inicia sesion como "
+                        "<b>administrador</b> para ver el panel de ataques.</p>",
+                        mimetype="text/html", status=403)
     ruta = os.path.join(APP_DIR, "dashboard.html")
     try:
         with open(ruta, encoding="utf-8") as fh:

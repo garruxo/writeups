@@ -72,8 +72,9 @@ def corpus_normal(n=3000):
             msg = " ".join(random.choices(PALABRAS, k=random.randint(2, 10)))
             if random.random() < 0.2:
                 msg += " (recomendado)"                      # parentesis legitimos
-            if random.random() < 0.15:
-                msg = "me ha encantado, repetire sin duda"
+            if random.random() < 0.2:
+                msg = random.choice(["it's great, i'll be back", "me ha encantado :)",
+                                     "que bien, repetire sin duda", "100% recomendado (top)"])
             out.append(f"/muro autor={random.choice(NOMBRES)} mensaje={msg}")
         else:
             out.append("/?q=" + " ".join(random.choices(PALABRAS, k=random.randint(1, 4))))
@@ -102,9 +103,10 @@ def corpus_ataques(n=500):
 Z_UMBRAL = 6.0   # nº de desviaciones para considerar una caracteristica anomala
 
 # caracteristicas que en trafico normal son ~siempre 0; si aparecen, es novedad.
-# (Los parentesis se EXCLUYEN: aparecen en texto legitimo "(recomendado)".)
-# indices: 5 palabras_mayus, 6 comillas, 7 angulos, 10 pct, 11 separadores, 14 '..'
-PELIGROSAS = [5, 6, 7, 10, 11, 14]
+# Se EXCLUYEN parentesis, comillas y % : aparecen en texto legitimo
+# ("(nota)", "it's", "100%"); ademas el %-encoding de ataques ya se decodifica
+# antes de llegar a la IA. indices: 5 palabras_mayus, 7 angulos, 11 separadores, 14 '..'
+PELIGROSAS = [5, 7, 11, 14]
 
 class ModeloAnomalias:
     """Ensemble de 3 senales (anomalo si CUALQUIERA salta):
