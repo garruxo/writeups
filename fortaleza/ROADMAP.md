@@ -31,7 +31,8 @@ Laboratorio de **defensa activa** (legal, dentro del propio perímetro) para por
   (`nginx-fortaleza.conf`) con IP real del cliente (XFF de confianza).
 - [x] **Despliegue en 1 comando** (`desplegar.sh`).
 - [ ] Verificar el backend Redis en Kali (arrancar con `REDIS_URL`).
-- [ ] Entrenar la IA mas lista (mas features, medir precision/recall).
+- [x] **IA entrenada y evaluada** (train/test): Recall 91.4%, FP 0.0%,
+  Precision 100%, F1 95.5% sobre datos no vistos (`python3 cerebro_ia.py`).
 
 > Nota lab: el baneo es en memoria. Si te baneas a ti mismo probando,
 > reinicia (panel: 3 Parar -> 1 Arrancar) y se limpia.
