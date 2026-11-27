@@ -1,3 +1,7 @@
 # artefactos que genera la app al correr
 fortaleza.db
 fortaleza_seguridad.log
+
+# cache de python
+__pycache__/
+*.pyc
