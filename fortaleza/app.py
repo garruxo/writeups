@@ -99,6 +99,17 @@ def home():
         "email <input name=email> clave <input name=password type=password>"
         "<button>Entrar</button></form>", mimetype="text/html")
 
+@app.route("/stream")
+def stream():
+    """Conexion larga para medir clock skew: manda un chunk cada 0.2s ~120s.
+    Una sola conexion TCP -> tsval lineal -> skew medible (el offset aleatorio
+    de Linux solo cambia el arranque, no la pendiente)."""
+    def gen():
+        for _ in range(600):
+            yield "keepalive\n"
+            time.sleep(0.2)
+    return Response(gen(), mimetype="text/plain")
+
 @app.route("/login", methods=["POST"])
 def login():
     ip = request.remote_addr
@@ -135,4 +146,4 @@ def honeytoken(ruta):
 
 if __name__ == "__main__":
     init_db()
-    app.run(host="127.0.0.1", port=8000)
+    app.run(host="127.0.0.1", port=8000, threaded=True)

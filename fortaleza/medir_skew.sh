@@ -15,15 +15,13 @@ fi
 echo "[*] Necesito sudo para capturar trafico:"
 sudo -v || exit 1
 
-echo "[*] Capturando tcp/8000 en loopback durante ~100s..."
-sudo timeout 100 tcpdump -i lo -s 0 -w "$PCAP" tcp port 8000 &
+echo "[*] Capturando tcp/8000 en loopback durante ~130s..."
+sudo timeout 130 tcpdump -i lo -s 0 -w "$PCAP" tcp port 8000 &
 sleep 2   # dar tiempo a que tcpdump este escuchando ANTES de atacar
 
-echo "[*] Atacando la Fortaleza (genera los paquetes)..."
-for i in $(seq 1 320); do
-  curl -s -o /dev/null http://localhost:8000/
-  sleep 0.3
-done
+echo "[*] Abriendo UNA conexion larga de 120s (/stream)..."
+echo "    (una sola conexion -> tsval lineal -> skew medible)"
+curl -s -N --max-time 125 http://localhost:8000/stream > /dev/null
 
 echo "[*] Esperando a que cierre la captura..."
 wait
