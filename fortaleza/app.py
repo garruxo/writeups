@@ -9,12 +9,21 @@ import hashlib, hmac, os, sqlite3, time, logging, re, threading, secrets, html
 from collections import defaultdict
 from urllib.parse import unquote_plus
 from flask import Flask, request, jsonify, Response, g
+from almacen import crear_almacen
 
 APP_DIR  = os.path.dirname(os.path.abspath(__file__))
 DB_PATH  = os.path.join(APP_DIR, "fortaleza.db")
 LOG_PATH = os.path.join(APP_DIR, "fortaleza_seguridad.log")
 
 app = Flask(__name__)
+
+# Estado compartido entre workers (Redis en produccion, memoria en desarrollo)
+ALM, BACKEND = crear_almacen()
+
+# Proxies de confianza (nginx). Solo DETRAS de ellos se cree el X-Forwarded-For,
+# porque nuestro nginx lo reescribe con la IP real del cliente (no se puede
+# falsear). Sin proxy (desarrollo), la identidad es la IP de la conexion.
+PROXIES_CONFIANZA = set(filter(None, os.environ.get("TRUSTED_PROXIES", "").split(",")))
 
 # ---- Log de seguridad (lo lee fail2ban en la Capa 3) --------------------
 # Logger propio y aislado: SOLO lineas SECURITY, sin ruido de Flask.
@@ -27,7 +36,7 @@ sec.addHandler(_h)
 
 def alerta(motivo, extra=""):
     """Escribe una linea que fail2ban sabra parsear: ... ip=<IP> ..."""
-    ip = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
+    ip = _ip()   # IP real del cliente (detras de proxy, via XFF de confianza)
     sec.info(f"SECURITY intruso ip={ip} motivo={motivo} path={request.path} {extra}".strip())
 
 # ---- Hashing fuerte (scrypt, con sal por usuario) -----------------------
@@ -72,14 +81,10 @@ def init_db():
     con.commit(); con.close()
 
 # ---- Rate limiting por IP (frena el fuerza bruta) -----------------------
-intentos = defaultdict(list)   # ip -> [timestamps]
-MAX_INTENTOS, VENTANA = 5, 60  # 5 intentos por minuto
+MAX_INTENTOS, VENTANA = 5, 60  # 5 intentos por minuto (contador en el almacen)
 
 def rate_limited(ip):
-    ahora = time.time()
-    intentos[ip] = [t for t in intentos[ip] if ahora - t < VENTANA]
-    intentos[ip].append(ahora)
-    return len(intentos[ip]) > MAX_INTENTOS
+    return ALM.incr(f"rl:{ip}", ttl=VENTANA) > MAX_INTENTOS
 
 # ---- WAF + Lapa (auto-baneo del IP intruso) -----------------------------
 # Inspecciona cada peticion. Al intruso que insiste, le corta el acceso solo
@@ -116,17 +121,28 @@ PESOS = {
 }
 UMBRAL_EXPULSION = 5     # sospecha a partir de la cual se expulsa
 BAN_SEG = 300            # duracion de la expulsion
-EXPEDIENTE = {}          # ip -> {sospecha, eventos, primera, ultima, baneado_hasta}
+EXP_TTL = 3600           # cuanto se guarda un expediente sin actividad
 
 def _ip():
-    # Identidad = IP REAL de la conexion TCP. NO se usa X-Forwarded-For.
-    return request.remote_addr or "desconocido"
+    # Identidad del cliente. Solo se cree el X-Forwarded-For si la conexion
+    # viene de un proxy de confianza (nuestro nginx, que lo reescribe); si no,
+    # se usa la IP de la conexion TCP (no se confia en cabeceras del cliente).
+    ra = request.remote_addr or "desconocido"
+    if ra in PROXIES_CONFIANZA:
+        xff = request.headers.get("X-Forwarded-For", "")
+        if xff:
+            return xff.split(",")[-1].strip()
+    return ra
+
+def es_https():
+    # True si la peticion llega por HTTPS (directo o via proxy nginx)
+    return request.is_secure or request.headers.get("X-Forwarded-Proto", "") == "https"
 
 def strike(motivo, extra=""):
-    """Abre/actualiza el expediente del IP y lo expulsa si cruza el umbral."""
+    """Abre/actualiza el expediente del IP (en el almacen) y lo expulsa si cruza el umbral."""
     ip = _ip(); now = time.time()
-    e = EXPEDIENTE.setdefault(ip, {"sospecha": 0, "eventos": [],
-                                   "primera": now, "ultima": now, "baneado_hasta": 0})
+    e = ALM.jget(f"exp:{ip}") or {"sospecha": 0, "eventos": [],
+                                  "primera": now, "ultima": now, "baneado_hasta": 0}
     e["sospecha"] += PESOS.get(motivo, 1)
     e["ultima"] = now
     e["eventos"].append({"t": now, "motivo": motivo, "path": request.path, "extra": extra})
@@ -135,6 +151,7 @@ def strike(motivo, extra=""):
     if e["sospecha"] >= UMBRAL_EXPULSION and now > e["baneado_hasta"]:
         e["baneado_hasta"] = now + BAN_SEG
         alerta("EXPULSADO", f"sospecha={e['sospecha']}")
+    ALM.jset(f"exp:{ip}", e, ttl=EXP_TTL)
 
 # ---- Cerebro IA: deteccion de anomalias (complementa al WAF por firmas) ---
 try:
@@ -152,13 +169,14 @@ def guardia():
     if request.path in ("/mapa", "/api/ataques"):
         return
     ip = _ip(); now = time.time()
-    e = EXPEDIENTE.get(ip)
+    e = ALM.jget(f"exp:{ip}")
     # 1) ¿ya expulsado? -> tarpit (lo pega) + 403
     if e and now < e["baneado_hasta"]:
         time.sleep(2)
         return jsonify(error="IP expulsada"), 403
     if e and e["baneado_hasta"] and now >= e["baneado_hasta"]:
         e["sospecha"] = 0; e["baneado_hasta"] = 0   # cumplido el castigo, 2a oportunidad
+        ALM.jset(f"exp:{ip}", e, ttl=EXP_TTL)
     # 2) herramienta de ataque por el User-Agent
     ua = request.headers.get("User-Agent", "")
     if SCANNERS.search(ua):
@@ -193,23 +211,16 @@ EMAIL_RE = re.compile(r"^[^@\s]{1,64}@[^@\s]{1,255}$")
 # El rol vive en el servidor, no en el cliente: el navegador solo tiene un
 # token aleatorio imposible de adivinar. Se emite uno nuevo en cada login
 # (evita fijacion de sesion).
-SESIONES = {}            # token -> {"email":, "rol":, "exp":}
-SESION_TTL = 3600
+SESION_TTL = 3600        # la sesion vive en el almacen (compartida entre workers)
 
-def nueva_sesion(email, rol):
+def nueva_sesion(email, rol, csrf):
     token = secrets.token_urlsafe(32)
-    SESIONES[token] = {"email": email, "rol": rol, "exp": time.time() + SESION_TTL}
+    ALM.jset(f"ses:{token}", {"email": email, "rol": rol, "csrf": csrf}, ttl=SESION_TTL)
     return token
 
 def sesion_actual():
     token = request.cookies.get("session")
-    s = SESIONES.get(token)
-    if not s:
-        return None
-    if time.time() > s["exp"]:
-        SESIONES.pop(token, None)
-        return None
-    return s
+    return ALM.jget(f"ses:{token}") if token else None   # el TTL lo gestiona el almacen
 
 # ---- Cabeceras de seguridad en TODAS las respuestas ---------------------
 @app.after_request
@@ -243,28 +254,24 @@ def home():
         "<button>Entrar</button></form>", mimetype="text/html")
 
 # ---- Limite de conexiones /stream (anti-DoS de recurso) -----------------
-# Un endpoint de larga duracion sin limite agota los workers en produccion.
-_stream_lock = threading.Lock()
-_stream_n = [0]
+# Contador en el almacen: el limite es GLOBAL entre todos los workers.
 MAX_STREAMS = 10
 
 @app.route("/stream")
 def stream():
     """Conexion larga para medir clock skew: manda un chunk cada 0.2s ~120s.
-    Limitada a MAX_STREAMS concurrentes para no agotar el servidor."""
-    with _stream_lock:
-        if _stream_n[0] >= MAX_STREAMS:
-            strike("stream_saturado", f"activas={_stream_n[0]}")
-            return jsonify(error="Demasiadas conexiones de streaming"), 503
-        _stream_n[0] += 1
+    Limitada a MAX_STREAMS concurrentes (contador compartido) para no agotar."""
+    if ALM.incr("streams") > MAX_STREAMS:
+        ALM.decr("streams")
+        strike("stream_saturado", f"max={MAX_STREAMS}")
+        return jsonify(error="Demasiadas conexiones de streaming"), 503
     def gen():
         try:
             for _ in range(600):
                 yield "keepalive\n"
                 time.sleep(0.2)
         finally:
-            with _stream_lock:
-                _stream_n[0] -= 1
+            ALM.decr("streams")
     return Response(gen(), mimetype="text/plain")
 
 @app.route("/login", methods=["POST"])
@@ -287,15 +294,14 @@ def login():
     # Tiempo constante: ejecuta scrypt EXISTA o no el usuario (anti-enumeracion)
     ok = verify_pw(password, row["pw"] if row else DUMMY_HASH)
     if row and ok:
-        token = nueva_sesion(email, row["rol"])
-        csrf = secrets.token_urlsafe(16)
-        SESIONES[token]["csrf"] = csrf       # token anti-CSRF ligado a la sesion
+        csrf = secrets.token_urlsafe(16)         # token anti-CSRF ligado a la sesion
+        token = nueva_sesion(email, row["rol"], csrf)
         resp = jsonify(ok=True, msg=f"Bienvenido ({row['rol']})", rol=row["rol"], csrf=csrf)
-        # Cookie: HttpOnly (JS no la lee) + SameSite=Strict (defensa en profundidad)
+        # Cookie: HttpOnly + SameSite=Strict + Secure (solo HTTPS, en produccion)
         resp.set_cookie("session", token, httponly=True, samesite="Strict",
-                        max_age=SESION_TTL)
+                        secure=es_https(), max_age=SESION_TTL)
         return resp
-    strike("login_fallido", f"email={email!r}")
+    alerta("login_fallido", f"email={email!r}")   # solo log; el freno es el rate-limit
     return jsonify(error="Credenciales incorrectas"), 401
 
 @app.route("/admin")
@@ -320,7 +326,7 @@ def logout():
             request.headers.get("X-CSRF-Token", ""), s.get("csrf", "")):
         strike("csrf_bloqueado", "path=/logout")
         return jsonify(error="CSRF: token ausente o invalido"), 403
-    SESIONES.pop(request.cookies.get("session"), None)
+    ALM.delete(f"ses:{request.cookies.get('session')}")
     resp = jsonify(ok=True, msg="Sesion cerrada")
     resp.delete_cookie("session")
     return resp
@@ -348,9 +354,12 @@ def muro():
 def api_ataques():
     now = time.time()
     datos = []
-    for ip, e in EXPEDIENTE.items():
+    for k in ALM.keys("exp:"):
+        e = ALM.jget(k)
+        if not e:
+            continue
         datos.append({
-            "ip": ip,
+            "ip": k.split("exp:", 1)[1],
             "sospecha": e["sospecha"],
             "expulsado": now < e["baneado_hasta"],
             "n_eventos": len(e["eventos"]),
@@ -382,6 +391,8 @@ def honeytoken(ruta):
         return jsonify(error="Not found"), 404      # le respondemos normal, pero ya esta marcado
     return jsonify(error="Not found"), 404
 
+init_db()              # tambien bajo gunicorn (que no ejecuta el bloque __main__)
+print(f"[Fortaleza] almacen={BACKEND}  proxies={PROXIES_CONFIANZA or 'ninguno'}")
+
 if __name__ == "__main__":
-    init_db()
     app.run(host="127.0.0.1", port=8000, threaded=True)

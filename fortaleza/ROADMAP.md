@@ -23,11 +23,15 @@ Laboratorio de **defensa activa** (legal, dentro del propio perímetro) para por
 - [x] **Mapa de ataques en vivo** (`dashboard.html` en `/mapa`) — panel SOC con
   expedientes, barras de sospecha y mapamundi (geolocaliza IPs publicas).
 
-## Siguiente: escalar a produccion
-- [ ] Servidor WSGI real (**gunicorn**, varios workers).
-- [ ] **HTTPS/TLS** (certificado; nginx como proxy inverso).
-- [ ] **Estado compartido en Redis** (sesiones/baneos/rate-limit/IA) porque con
-  varios workers la memoria de cada uno ya no sirve.
+## Produccion (nivel experto) — ver PRODUCCION.md
+- [x] **Estado compartido** (`almacen.py`): Redis o memoria (fallback). Sesiones,
+  expedientes, rate-limit y contador de streams movidos al almacen.
+- [x] **gunicorn** (`gunicorn_conf.py`): varios workers, gthread para `/stream`.
+- [x] **HTTPS/TLS** probado (cookie `Secure`); **nginx** como proxy inverso
+  (`nginx-fortaleza.conf`) con IP real del cliente (XFF de confianza).
+- [x] **Despliegue en 1 comando** (`desplegar.sh`).
+- [ ] Verificar el backend Redis en Kali (arrancar con `REDIS_URL`).
+- [ ] Entrenar la IA mas lista (mas features, medir precision/recall).
 
 > Nota lab: el baneo es en memoria. Si te baneas a ti mismo probando,
 > reinicia (panel: 3 Parar -> 1 Arrancar) y se limpia.

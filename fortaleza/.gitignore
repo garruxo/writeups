@@ -8,3 +8,7 @@ __pycache__/
 
 # modelo IA entrenado (se genera solo)
 cerebro_ia.joblib
+
+# certificados TLS (se generan)
+cert.pem
+key.pem
