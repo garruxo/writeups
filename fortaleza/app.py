@@ -78,10 +78,25 @@ def rate_limited(ip):
 # ---- WAF + Lapa (auto-baneo del IP intruso) -----------------------------
 # Inspecciona cada peticion. Al intruso que insiste, le corta el acceso solo
 # (403 + tarpit). Baneo EN LA APP = dentro de nuestro perimetro = legal.
+def normaliza(s):
+    """Desarma la ofuscacion ANTES de inspeccionar: minusculas, quita
+    comentarios /* */ y colapsa espacios. Asi UNION/**/SELECT y uNiOn  SeLeCt
+    acaban siendo lo mismo: 'union select'. (La misma idea del forense.)"""
+    s = s.lower()
+    s = re.sub(r"/\*.*?\*/", " ", s, flags=re.S)   # comentarios -> espacio
+    s = re.sub(r"\s+", " ", s)                       # colapsa espacios/tabs/saltos
+    return s
+
 WAF = [
-    ("sqli", re.compile(r"union\s+select|\bor\s+1=1\b|\bor\s+'1'='1'|pg_sleep|sleep\s*\(|information_schema|benchmark\s*\(", re.I)),
-    ("xss",  re.compile(r"<script|onerror\s*=|onload\s*=|javascript:|<svg|<img[^>]+src", re.I)),
-    ("traversal", re.compile(r"\.\./|\.\.\\|/etc/passwd|/etc/shadow", re.I)),
+    ("sqli", re.compile(
+        r"union\s+select"                       # volcado
+        r"|\b(or|and)\s+\d+\s*=\s*\d+"          # or 1=1, and 2=2...
+        r"|\b(or|and)\s+'[^']*'\s*=\s*'"        # or 'a'='a'
+        r"|\|\|\s*\d"                            # 1 || 1=1
+        r"|sleep\s*\(|pg_sleep|benchmark\s*\(|waitfor\s+delay"  # time-based
+        r"|information_schema|\bfrom\s+users\b")),  # enumeracion
+    ("xss",  re.compile(r"<script|onerror\s*=|onload\s*=|javascript:|<svg|<img[^>]+src")),
+    ("traversal", re.compile(r"\.\./|\.\.\\|/etc/passwd|/etc/shadow")),
 ]
 SCANNERS = re.compile(r"sqlmap|nikto|nmap|dirbuster|gobuster|masscan|hydra|wpscan|acunetix|nuclei", re.I)
 STRIKES = defaultdict(int)   # ip -> nº de acciones sospechosas
@@ -89,7 +104,11 @@ BANS = {}                    # ip -> epoch hasta cuando esta baneado
 LIMITE_STRIKES, BAN_SEG = 3, 120
 
 def _ip():
-    return request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
+    # Identidad = IP REAL de la conexion TCP (request.remote_addr).
+    # NO se usa X-Forwarded-For: lo pone el cliente y se falsea para
+    # evadir el baneo. En produccion tras un proxy de confianza, se
+    # confiaria en XFF solo si remote_addr es ese proxy conocido.
+    return request.remote_addr or "desconocido"
 
 def strike(motivo, extra=""):
     """Suma un strike al IP y, al llegar al limite, lo banea (la lapa)."""
@@ -114,12 +133,13 @@ def guardia():
     if SCANNERS.search(ua):
         strike("scanner", f"ua={ua[:40]!r}")
         return jsonify(error="Peticion rechazada"), 403
-    # 3) firma de ataque en ruta + query + cuerpo (DECODIFICANDO el %20, etc.)
+    # 3) firma de ataque en ruta + query + cuerpo (DECODIFICA %20 y NORMALIZA)
     objetivo = request.path + " " + unquote_plus(request.query_string.decode("latin1", "ignore"))
     try:
-        objetivo += " " + unquote_plus(request.get_data(as_text=True)[:2000])
+        objetivo += " " + unquote_plus(request.get_data(as_text=True)[:8000])
     except Exception:
         pass
+    objetivo = normaliza(objetivo)             # desarma la ofuscacion
     for nombre, rx in WAF:
         if rx.search(objetivo):
             strike(f"waf_{nombre}", f"patron en {request.path}")
