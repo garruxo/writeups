@@ -105,25 +105,36 @@ WAF = [
     ("traversal", re.compile(r"\.\./|\.\.\\|/etc/passwd|/etc/shadow")),
 ]
 SCANNERS = re.compile(r"sqlmap|nikto|nmap|dirbuster|gobuster|masscan|hydra|wpscan|acunetix|nuclei", re.I)
-STRIKES = defaultdict(int)   # ip -> nº de acciones sospechosas
-BANS = {}                    # ip -> epoch hasta cuando esta baneado
-LIMITE_STRIKES, BAN_SEG = 3, 120
+# ---- Tercer cerebro: expediente por IP ("no me fio de ti") --------------
+# Cada accion sospechosa suma 'sospecha' segun su GRAVEDAD. Al cruzar el
+# umbral, el IP es EXPULSADO. El expediente alimenta el mapa de ataques.
+PESOS = {
+    "honeytoken": 3, "scanner": 3,
+    "waf_sqli": 2, "waf_xss": 2, "waf_traversal": 2,
+    "ia_anomalia": 2, "csrf_bloqueado": 2, "acceso_denegado": 2,
+    "login_fallido": 1, "rate_limit": 1, "entrada_invalida": 1, "stream_saturado": 1,
+}
+UMBRAL_EXPULSION = 5     # sospecha a partir de la cual se expulsa
+BAN_SEG = 300            # duracion de la expulsion
+EXPEDIENTE = {}          # ip -> {sospecha, eventos, primera, ultima, baneado_hasta}
 
 def _ip():
-    # Identidad = IP REAL de la conexion TCP (request.remote_addr).
-    # NO se usa X-Forwarded-For: lo pone el cliente y se falsea para
-    # evadir el baneo. En produccion tras un proxy de confianza, se
-    # confiaria en XFF solo si remote_addr es ese proxy conocido.
+    # Identidad = IP REAL de la conexion TCP. NO se usa X-Forwarded-For.
     return request.remote_addr or "desconocido"
 
 def strike(motivo, extra=""):
-    """Suma un strike al IP y, al llegar al limite, lo banea (la lapa)."""
-    ip = _ip()
-    STRIKES[ip] += 1
+    """Abre/actualiza el expediente del IP y lo expulsa si cruza el umbral."""
+    ip = _ip(); now = time.time()
+    e = EXPEDIENTE.setdefault(ip, {"sospecha": 0, "eventos": [],
+                                   "primera": now, "ultima": now, "baneado_hasta": 0})
+    e["sospecha"] += PESOS.get(motivo, 1)
+    e["ultima"] = now
+    e["eventos"].append({"t": now, "motivo": motivo, "path": request.path, "extra": extra})
+    e["eventos"] = e["eventos"][-50:]
     alerta(motivo, extra)
-    if STRIKES[ip] >= LIMITE_STRIKES and ip not in BANS:
-        BANS[ip] = time.time() + BAN_SEG
-        alerta("BANEADO", f"strikes={STRIKES[ip]} durante={BAN_SEG}s")
+    if e["sospecha"] >= UMBRAL_EXPULSION and now > e["baneado_hasta"]:
+        e["baneado_hasta"] = now + BAN_SEG
+        alerta("EXPULSADO", f"sospecha={e['sospecha']}")
 
 # ---- Cerebro IA: deteccion de anomalias (complementa al WAF por firmas) ---
 try:
@@ -135,13 +146,19 @@ except Exception as _e:
 
 @app.before_request
 def guardia():
-    ip = _ip()
-    # 1) ¿ya baneado? -> tarpit (lo pega) + 403
-    if ip in BANS:
-        if time.time() < BANS[ip]:
-            time.sleep(2)
-            return jsonify(error="IP bloqueada"), 403
-        del BANS[ip]; STRIKES[ip] = 0          # expira el baneo
+    # El panel de monitorizacion siempre es accesible (si no, al atacar desde
+    # el mismo equipo te bloquearias el mapa a ti mismo). En produccion iria
+    # en una interfaz separada y protegida por rol admin.
+    if request.path in ("/mapa", "/api/ataques"):
+        return
+    ip = _ip(); now = time.time()
+    e = EXPEDIENTE.get(ip)
+    # 1) ¿ya expulsado? -> tarpit (lo pega) + 403
+    if e and now < e["baneado_hasta"]:
+        time.sleep(2)
+        return jsonify(error="IP expulsada"), 403
+    if e and e["baneado_hasta"] and now >= e["baneado_hasta"]:
+        e["sospecha"] = 0; e["baneado_hasta"] = 0   # cumplido el castigo, 2a oportunidad
     # 2) herramienta de ataque por el User-Agent
     ua = request.headers.get("User-Agent", "")
     if SCANNERS.search(ua):
@@ -197,7 +214,16 @@ def sesion_actual():
 # ---- Cabeceras de seguridad en TODAS las respuestas ---------------------
 @app.after_request
 def cabeceras(resp):
-    resp.headers["Content-Security-Policy"] = "default-src 'self'; frame-ancestors 'none'"
+    if request.path == "/mapa":
+        # CSP a medida solo para el panel: permite sus estilos/scripts y Leaflet
+        resp.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
+            "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
+            "img-src 'self' data: https://*.basemaps.cartocdn.com; "
+            "connect-src 'self' http://ip-api.com")
+    else:
+        resp.headers["Content-Security-Policy"] = "default-src 'self'; frame-ancestors 'none'"
     resp.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     resp.headers["X-Content-Type-Options"] = "nosniff"
     resp.headers["X-Frame-Options"] = "DENY"
@@ -228,7 +254,7 @@ def stream():
     Limitada a MAX_STREAMS concurrentes para no agotar el servidor."""
     with _stream_lock:
         if _stream_n[0] >= MAX_STREAMS:
-            alerta("stream_saturado", f"activas={_stream_n[0]}")
+            strike("stream_saturado", f"activas={_stream_n[0]}")
             return jsonify(error="Demasiadas conexiones de streaming"), 503
         _stream_n[0] += 1
     def gen():
@@ -245,14 +271,14 @@ def stream():
 def login():
     ip = request.remote_addr
     if rate_limited(ip):
-        alerta("rate_limit")                       # demasiados intentos -> sospechoso
+        strike("rate_limit")                       # demasiados intentos -> sospechoso
         return jsonify(error="Demasiados intentos. Espera."), 429
 
     email = (request.form.get("email") or "").strip()
     password = request.form.get("password") or ""
 
     if not EMAIL_RE.match(email):                  # validacion: ni intento con basura
-        alerta("entrada_invalida", f"email={email[:40]!r}")
+        strike("entrada_invalida", f"email={email[:40]!r}")
         return jsonify(error="Datos invalidos"), 400
 
     # Consulta PARAMETRIZADA: el ' OR 1=1-- es solo texto, no rompe nada.
@@ -269,7 +295,7 @@ def login():
         resp.set_cookie("session", token, httponly=True, samesite="Strict",
                         max_age=SESION_TTL)
         return resp
-    alerta("login_fallido", f"email={email!r}")    # <- fail2ban cuenta estos
+    strike("login_fallido", f"email={email!r}")
     return jsonify(error="Credenciales incorrectas"), 401
 
 @app.route("/admin")
@@ -279,7 +305,7 @@ def admin():
     if not s:
         return jsonify(error="No autenticado"), 401
     if s["rol"] != "admin":
-        alerta("acceso_denegado", f"email={s['email']} rol={s['rol']} intento=/admin")
+        strike("acceso_denegado", f"email={s['email']} rol={s['rol']} intento=/admin")
         return jsonify(error="Prohibido: requiere rol admin"), 403
     return jsonify(ok=True, panel="ADMIN", email=s["email"],
                    datos="Aqui irian los datos sensibles de la tienda")
@@ -292,7 +318,7 @@ def logout():
     # del navegador como SameSite.
     if not s or not hmac.compare_digest(
             request.headers.get("X-CSRF-Token", ""), s.get("csrf", "")):
-        alerta("csrf_bloqueado", "path=/logout")
+        strike("csrf_bloqueado", "path=/logout")
         return jsonify(error="CSRF: token ausente o invalido"), 403
     SESIONES.pop(request.cookies.get("session"), None)
     resp = jsonify(ok=True, msg="Sesion cerrada")
@@ -316,6 +342,33 @@ def muro():
     return Response(
         "<!doctype html><meta charset=utf-8><title>Muro</title>"
         "<h1>Muro de mensajes</h1><ul>" + filas + "</ul>", mimetype="text/html")
+
+# ---- Mapa de ataques: datos (JSON) + panel (HTML) ------------------------
+@app.route("/api/ataques")
+def api_ataques():
+    now = time.time()
+    datos = []
+    for ip, e in EXPEDIENTE.items():
+        datos.append({
+            "ip": ip,
+            "sospecha": e["sospecha"],
+            "expulsado": now < e["baneado_hasta"],
+            "n_eventos": len(e["eventos"]),
+            "ultimo": e["eventos"][-1]["motivo"] if e["eventos"] else None,
+            "hace_seg": round(now - e["ultima"]),
+            "eventos": e["eventos"][-8:],
+        })
+    datos.sort(key=lambda d: -d["sospecha"])
+    return jsonify(datos)
+
+@app.route("/mapa")
+def mapa():
+    ruta = os.path.join(APP_DIR, "dashboard.html")
+    try:
+        with open(ruta, encoding="utf-8") as fh:
+            return Response(fh.read(), mimetype="text/html")
+    except FileNotFoundError:
+        return jsonify(error="dashboard.html no encontrado"), 404
 
 # ---- TRAMPA (Capa 4): cebos que nadie legitimo toca jamas ----------------
 TRAMPAS = ["/.env", "/wp-login.php", "/admin.php", "/backup.sql",

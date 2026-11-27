@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fortaleza · Mapa de Ataques</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+  :root{ --bg:#0a0e17; --panel:#111827; --line:#1f2a3a; --txt:#e5e7eb; --mut:#7c8aa0;
+         --rojo:#ff3b4e; --amb:#ffb020; --verde:#2dd4bf; }
+  *{box-sizing:border-box} html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--txt);font:14px/1.4 ui-monospace,Menlo,Consolas,monospace;display:flex;flex-direction:column;height:100vh}
+  header{display:flex;align-items:center;gap:16px;padding:10px 16px;border-bottom:1px solid var(--line);background:#0c111c}
+  header h1{font-size:15px;margin:0;letter-spacing:.5px}
+  header h1 b{color:var(--rojo)}
+  .kpis{display:flex;gap:18px;margin-left:auto}
+  .kpi{text-align:center}.kpi .n{font-size:20px;font-weight:700}.kpi .l{font-size:10px;color:var(--mut);text-transform:uppercase}
+  .kpi.rojo .n{color:var(--rojo)} .kpi.amb .n{color:var(--amb)}
+  button{background:#1b2535;color:var(--txt);border:1px solid var(--line);padding:6px 10px;border-radius:6px;cursor:pointer;font-family:inherit}
+  button:hover{border-color:var(--rojo)}
+  main{flex:1;display:flex;min-height:0}
+  #map{flex:1;background:#0a0e17}
+  aside{width:360px;border-left:1px solid var(--line);background:var(--panel);overflow:auto;padding:10px}
+  aside h2{font-size:11px;color:var(--mut);text-transform:uppercase;margin:4px 2px 10px}
+  .fila{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:8px;background:#0e1420}
+  .fila.exp{border-color:var(--rojo);box-shadow:0 0 0 1px var(--rojo) inset}
+  .fila .top{display:flex;justify-content:space-between;align-items:center}
+  .ip{font-weight:700}
+  .badge{font-size:10px;padding:2px 6px;border-radius:10px;background:#20304a;color:var(--mut)}
+  .badge.exp{background:var(--rojo);color:#fff}
+  .bar{height:6px;border-radius:4px;background:#20304a;margin:7px 0 4px;overflow:hidden}
+  .bar span{display:block;height:100%;background:linear-gradient(90deg,var(--amb),var(--rojo))}
+  .meta{font-size:11px;color:var(--mut);display:flex;justify-content:space-between}
+  .empty{color:var(--mut);text-align:center;padding:30px 10px}
+  .leaflet-container{background:#0a0e17}
+  .pulso{border-radius:50%;background:var(--rojo);box-shadow:0 0 0 rgba(255,59,78,.6);animation:p 1.6s infinite}
+  .pulso.exp{background:#fff}
+  @keyframes p{0%{box-shadow:0 0 0 0 rgba(255,59,78,.6)}70%{box-shadow:0 0 0 16px rgba(255,59,78,0)}100%{box-shadow:0 0 0 0 rgba(255,59,78,0)}}
+  .dot{font-size:11px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏰 FORTALEZA · <b>MAPA DE ATAQUES</b> <span style="color:var(--mut)">en vivo</span></h1>
+  <div class="kpis">
+    <div class="kpi"><div class="n" id="k-ips">0</div><div class="l">IPs</div></div>
+    <div class="kpi rojo"><div class="n" id="k-exp">0</div><div class="l">Expulsados</div></div>
+    <div class="kpi amb"><div class="n" id="k-ev">0</div><div class="l">Eventos</div></div>
+  </div>
+  <button id="demo">▶ Demo</button>
+</header>
+<main>
+  <div id="map"></div>
+  <aside>
+    <h2>Expedientes (mayor sospecha primero)</h2>
+    <div id="lista"><div class="empty">Sin ataques todavía.<br>Lanza el atacante y verás aparecer los IPs.</div></div>
+  </aside>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const MOTIVOS = {honeytoken:"Honeytoken",scanner:"Escáner",waf_sqli:"SQLi",waf_xss:"XSS",
+  waf_traversal:"Path traversal",ia_anomalia:"Anomalía IA",csrf_bloqueado:"CSRF",
+  acceso_denegado:"Acceso denegado",login_fallido:"Login fallido",rate_limit:"Fuerza bruta",
+  entrada_invalida:"Entrada inválida",stream_saturado:"DoS /stream"};
+
+let map, capa, geocache = {}, demo = false;
+try{
+  map = L.map('map',{worldCopyJump:true}).setView([25,10], 2);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+    {maxZoom:7, subdomains:'abcd'}).addTo(map);
+  capa = L.layerGroup().addTo(map);
+}catch(e){ /* sin internet: el panel lateral sigue funcionando */ }
+
+function marcador(a){
+  const cls = a.expulsado ? 'pulso exp' : 'pulso';
+  const r = Math.min(10 + a.sospecha*3, 34);
+  return L.divIcon({className:'', html:`<div class="${cls}" style="width:${r}px;height:${r}px"></div>`,
+    iconSize:[r,r]});
+}
+
+async function geo(ip){
+  if(geocache[ip]!==undefined) return geocache[ip];
+  // IPs privadas/locales no geolocalizan
+  if(/^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1)/.test(ip)){ geocache[ip]=null; return null; }
+  try{
+    const r = await fetch(`http://ip-api.com/json/${ip}?fields=status,lat,lon,country,city`);
+    const d = await r.json();
+    geocache[ip] = d.status==='success' ? {lat:d.lat,lon:d.lon,label:`${d.city||''} ${d.country||''}`.trim()} : null;
+  }catch(e){ geocache[ip]=null; }
+  return geocache[ip];
+}
+
+function pinta(lista){
+  // KPIs
+  document.getElementById('k-ips').textContent = lista.length;
+  document.getElementById('k-exp').textContent = lista.filter(a=>a.expulsado).length;
+  document.getElementById('k-ev').textContent  = lista.reduce((s,a)=>s+a.n_eventos,0);
+  // panel lateral
+  const cont = document.getElementById('lista');
+  if(!lista.length){ cont.innerHTML='<div class="empty">Sin ataques todavía.</div>'; }
+  else cont.innerHTML = lista.map(a=>{
+    const pct = Math.min(a.sospecha/8*100,100);
+    return `<div class="fila ${a.expulsado?'exp':''}">
+      <div class="top"><span class="ip">${a.ip}</span>
+        <span class="badge ${a.expulsado?'exp':''}">${a.expulsado?'EXPULSADO':'vigilado'}</span></div>
+      <div class="bar"><span style="width:${pct}%"></span></div>
+      <div class="meta"><span>sospecha ${a.sospecha} · ${a.n_eventos} ev.</span>
+        <span>${MOTIVOS[a.ultimo]||a.ultimo||''} · hace ${a.hace_seg}s</span></div>
+    </div>`;
+  }).join('');
+  // mapa
+  if(!capa) return;
+  capa.clearLayers();
+  lista.forEach(async a=>{
+    const g = await geo(a.ip);
+    if(g){ L.marker([g.lat,g.lon],{icon:marcador(a)})
+      .bindPopup(`<b>${a.ip}</b><br>${g.label}<br>sospecha ${a.sospecha}`).addTo(capa); }
+  });
+}
+
+async function tick(){
+  if(demo) return;
+  try{ const r=await fetch('/api/ataques'); pinta(await r.json()); }catch(e){}
+}
+setInterval(tick, 3000); tick();
+
+// --- Demo: inyecta ataques de ejemplo por el mundo (claramente etiquetado) ---
+document.getElementById('demo').onclick = ()=>{
+  demo = !demo;
+  document.getElementById('demo').textContent = demo ? '■ Parar demo' : '▶ Demo';
+  if(!demo){ tick(); return; }
+  const fake=[
+    {ip:"185.220.101.4",sospecha:8,expulsado:true,n_eventos:6,ultimo:"waf_sqli",hace_seg:2,_g:{lat:52.5,lon:13.4,label:"Berlín DE"}},
+    {ip:"45.148.10.9",sospecha:6,expulsado:true,n_eventos:5,ultimo:"scanner",hace_seg:8,_g:{lat:55.75,lon:37.6,label:"Moscú RU"}},
+    {ip:"103.21.44.2",sospecha:4,expulsado:false,n_eventos:3,ultimo:"ia_anomalia",hace_seg:4,_g:{lat:39.9,lon:116.4,label:"Pekín CN"}},
+    {ip:"200.89.75.1",sospecha:3,expulsado:false,n_eventos:2,ultimo:"login_fallido",hace_seg:12,_g:{lat:-34.6,lon:-58.4,label:"Buenos Aires AR"}},
+    {ip:"41.60.20.8",sospecha:7,expulsado:true,n_eventos:5,ultimo:"honeytoken",hace_seg:1,_g:{lat:6.5,lon:3.4,label:"Lagos NG"}},
+  ];
+  fake.forEach(a=>geocache[a.ip]=a._g);
+  pinta(fake);
+};
+</script>
+</body>
+</html>

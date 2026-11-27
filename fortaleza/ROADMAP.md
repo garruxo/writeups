@@ -18,6 +18,10 @@ Laboratorio de **defensa activa** (legal, dentro del propio perímetro) para por
   novedad de rango + z-score. Caza ataques novedosos que la regex NO ve
   (6/6 en prueba, 0 falsos positivos). Integrado como 4a capa del WAF.
 - [x] **CSRF token** y candado etico (solo-localhost) en los atacantes.
+- [x] **Tercer cerebro ("no me fio de ti")** — expediente por IP con sospecha
+  ponderada; al cruzar el umbral EXPULSA al intruso. `/api/ataques` (JSON).
+- [x] **Mapa de ataques en vivo** (`dashboard.html` en `/mapa`) — panel SOC con
+  expedientes, barras de sospecha y mapamundi (geolocaliza IPs publicas).
 
 ## Siguiente: escalar a produccion
 - [ ] Servidor WSGI real (**gunicorn**, varios workers).
