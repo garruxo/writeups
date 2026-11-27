@@ -10,6 +10,10 @@ Laboratorio de **defensa activa** (legal, dentro del propio perímetro) para por
 - [x] **Capa 4 · Trampa** — honeytoken (cebos que nadie legitimo toca; tocarlos = strike directo).
 - [x] **Cerebro v1** — clock skew por conexion (`cerebro_clockskew.py`): huella del reloj fisico.
 - [x] **Panel** — `fortaleza.sh`: control interactivo con menu.
+- [x] **Sesion real** — login emite token opaco (cookie HttpOnly+SameSite), zona
+  `/admin` protegida por rol en el servidor. Abre ensayos de escalada de
+  privilegios, robo/fijacion de sesion, IDOR.
+- [x] **Limite anti-DoS** en `/stream` (MAX_STREAMS concurrentes).
 
 > Nota lab: el baneo es en memoria. Si te baneas a ti mismo probando,
 > reinicia (panel: 3 Parar -> 1 Arrancar) y se limpia.

@@ -10,6 +10,12 @@ import urllib.request, urllib.parse, urllib.error
 
 URL = "http://localhost:8000"
 
+# CANDADO ETICO: esta herramienta SOLO ataca el laboratorio propio (localhost).
+# Auditar un sistema ajeno sin permiso por escrito es delito.
+from urllib.parse import urlparse as _up
+if _up(URL).hostname not in ("localhost", "127.0.0.1", "::1"):
+    raise SystemExit("Solo para el laboratorio local (localhost). Abortado.")
+
 def pedir(path, headers=None):
     req = urllib.request.Request(URL + path, headers={"User-Agent": "curl/8"} | (headers or {}))
     try:

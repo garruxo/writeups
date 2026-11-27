@@ -5,7 +5,7 @@ Web deliberadamente BLINDADA para practicar defensa en entorno seguro.
 Autor: Daniel Garrucho Garcia
 Dependencias: solo Flask.  Hashing: hashlib.scrypt (libreria estandar).
 """
-import hashlib, hmac, os, sqlite3, time, logging, re
+import hashlib, hmac, os, sqlite3, time, logging, re, threading, secrets
 from collections import defaultdict
 from urllib.parse import unquote_plus
 from flask import Flask, request, jsonify, Response, g
@@ -63,10 +63,12 @@ def close_db(_):
 
 def init_db():
     con = sqlite3.connect(DB_PATH)
-    con.execute("CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, email TEXT UNIQUE, pw TEXT)")
+    con.execute("CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, email TEXT UNIQUE, pw TEXT, rol TEXT)")
     if not con.execute("SELECT 1 FROM users LIMIT 1").fetchone():
-        con.execute("INSERT INTO users(email,pw) VALUES(?,?)",
-                    ("daniel@fortaleza.lab", hash_pw("Pa$$w0rd-Fuerte-2026!")))
+        con.executemany("INSERT INTO users(email,pw,rol) VALUES(?,?,?)", [
+            ("daniel@fortaleza.lab",  hash_pw("Pa$$w0rd-Fuerte-2026!"), "admin"),
+            ("cliente@fortaleza.lab", hash_pw("Cliente-2026-Segura!"),  "user"),
+        ])
     con.commit(); con.close()
 
 # ---- Rate limiting por IP (frena el fuerza bruta) -----------------------
@@ -158,6 +160,28 @@ def guardia():
 # ---- Validacion de entrada ----------------------------------------------
 EMAIL_RE = re.compile(r"^[^@\s]{1,64}@[^@\s]{1,255}$")
 
+# ---- Sesiones (token opaco aleatorio, estado en el SERVIDOR) -------------
+# El rol vive en el servidor, no en el cliente: el navegador solo tiene un
+# token aleatorio imposible de adivinar. Se emite uno nuevo en cada login
+# (evita fijacion de sesion).
+SESIONES = {}            # token -> {"email":, "rol":, "exp":}
+SESION_TTL = 3600
+
+def nueva_sesion(email, rol):
+    token = secrets.token_urlsafe(32)
+    SESIONES[token] = {"email": email, "rol": rol, "exp": time.time() + SESION_TTL}
+    return token
+
+def sesion_actual():
+    token = request.cookies.get("session")
+    s = SESIONES.get(token)
+    if not s:
+        return None
+    if time.time() > s["exp"]:
+        SESIONES.pop(token, None)
+        return None
+    return s
+
 # ---- Cabeceras de seguridad en TODAS las respuestas ---------------------
 @app.after_request
 def cabeceras(resp):
@@ -180,15 +204,29 @@ def home():
         "email <input name=email> clave <input name=password type=password>"
         "<button>Entrar</button></form>", mimetype="text/html")
 
+# ---- Limite de conexiones /stream (anti-DoS de recurso) -----------------
+# Un endpoint de larga duracion sin limite agota los workers en produccion.
+_stream_lock = threading.Lock()
+_stream_n = [0]
+MAX_STREAMS = 10
+
 @app.route("/stream")
 def stream():
     """Conexion larga para medir clock skew: manda un chunk cada 0.2s ~120s.
-    Una sola conexion TCP -> tsval lineal -> skew medible (el offset aleatorio
-    de Linux solo cambia el arranque, no la pendiente)."""
+    Limitada a MAX_STREAMS concurrentes para no agotar el servidor."""
+    with _stream_lock:
+        if _stream_n[0] >= MAX_STREAMS:
+            alerta("stream_saturado", f"activas={_stream_n[0]}")
+            return jsonify(error="Demasiadas conexiones de streaming"), 503
+        _stream_n[0] += 1
     def gen():
-        for _ in range(600):
-            yield "keepalive\n"
-            time.sleep(0.2)
+        try:
+            for _ in range(600):
+                yield "keepalive\n"
+                time.sleep(0.2)
+        finally:
+            with _stream_lock:
+                _stream_n[0] -= 1
     return Response(gen(), mimetype="text/plain")
 
 @app.route("/login", methods=["POST"])
@@ -206,14 +244,38 @@ def login():
         return jsonify(error="Datos invalidos"), 400
 
     # Consulta PARAMETRIZADA: el ' OR 1=1-- es solo texto, no rompe nada.
-    row = db().execute("SELECT pw FROM users WHERE email = ?", (email,)).fetchone()
+    row = db().execute("SELECT pw, rol FROM users WHERE email = ?", (email,)).fetchone()
 
     # Tiempo constante: ejecuta scrypt EXISTA o no el usuario (anti-enumeracion)
     ok = verify_pw(password, row["pw"] if row else DUMMY_HASH)
     if row and ok:
-        return jsonify(ok=True, msg="Bienvenido, Daniel")
+        token = nueva_sesion(email, row["rol"])
+        resp = jsonify(ok=True, msg=f"Bienvenido ({row['rol']})", rol=row["rol"])
+        # Cookie segura: HttpOnly (JS no la lee) + SameSite=Strict (anti-CSRF)
+        resp.set_cookie("session", token, httponly=True, samesite="Strict",
+                        max_age=SESION_TTL)
+        return resp
     alerta("login_fallido", f"email={email!r}")    # <- fail2ban cuenta estos
     return jsonify(error="Credenciales incorrectas"), 401
+
+@app.route("/admin")
+def admin():
+    """Zona protegida: requiere sesion valida Y rol admin (autorizacion en servidor)."""
+    s = sesion_actual()
+    if not s:
+        return jsonify(error="No autenticado"), 401
+    if s["rol"] != "admin":
+        alerta("acceso_denegado", f"email={s['email']} rol={s['rol']} intento=/admin")
+        return jsonify(error="Prohibido: requiere rol admin"), 403
+    return jsonify(ok=True, panel="ADMIN", email=s["email"],
+                   datos="Aqui irian los datos sensibles de la tienda")
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    SESIONES.pop(request.cookies.get("session"), None)
+    resp = jsonify(ok=True, msg="Sesion cerrada")
+    resp.delete_cookie("session")
+    return resp
 
 # ---- TRAMPA (Capa 4): cebos que nadie legitimo toca jamas ----------------
 TRAMPAS = ["/.env", "/wp-login.php", "/admin.php", "/backup.sql",
