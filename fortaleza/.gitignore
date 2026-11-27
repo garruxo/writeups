@@ -5,3 +5,6 @@ fortaleza_seguridad.log
 # cache de python
 __pycache__/
 *.pyc
+
+# modelo IA entrenado (se genera solo)
+cerebro_ia.joblib

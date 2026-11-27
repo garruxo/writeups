@@ -125,6 +125,14 @@ def strike(motivo, extra=""):
         BANS[ip] = time.time() + BAN_SEG
         alerta("BANEADO", f"strikes={STRIKES[ip]} durante={BAN_SEG}s")
 
+# ---- Cerebro IA: deteccion de anomalias (complementa al WAF por firmas) ---
+try:
+    import cerebro_ia
+    MODELO_IA = cerebro_ia.cargar()     # entrena solo la 1a vez
+except Exception as _e:
+    MODELO_IA = None                    # si falta sklearn, la app sigue sin IA
+    print(f"[IA] desactivada: {_e}")
+
 @app.before_request
 def guardia():
     ip = _ip()
@@ -156,6 +164,10 @@ def guardia():
         if rx.search(objetivo):
             strike(f"waf_{nombre}", f"patron en {request.path}")
             return jsonify(error="Peticion rechazada por el WAF"), 403
+    # 4) Cerebro IA: anomalia sin firma conocida (lo que la regex no ve)
+    if MODELO_IA is not None and MODELO_IA.es_anomalo(crudo):
+        strike("ia_anomalia", f"path={request.path}")
+        return jsonify(error="Peticion rechazada (anomalia detectada por IA)"), 403
 
 # ---- Validacion de entrada ----------------------------------------------
 EMAIL_RE = re.compile(r"^[^@\s]{1,64}@[^@\s]{1,255}$")

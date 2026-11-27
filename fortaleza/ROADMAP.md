@@ -14,6 +14,16 @@ Laboratorio de **defensa activa** (legal, dentro del propio perímetro) para por
   `/admin` protegida por rol en el servidor. Abre ensayos de escalada de
   privilegios, robo/fijacion de sesion, IDOR.
 - [x] **Limite anti-DoS** en `/stream` (MAX_STREAMS concurrentes).
+- [x] **Cerebro IA** — detector de anomalias (`cerebro_ia.py`): IsolationForest +
+  novedad de rango + z-score. Caza ataques novedosos que la regex NO ve
+  (6/6 en prueba, 0 falsos positivos). Integrado como 4a capa del WAF.
+- [x] **CSRF token** y candado etico (solo-localhost) en los atacantes.
+
+## Siguiente: escalar a produccion
+- [ ] Servidor WSGI real (**gunicorn**, varios workers).
+- [ ] **HTTPS/TLS** (certificado; nginx como proxy inverso).
+- [ ] **Estado compartido en Redis** (sesiones/baneos/rate-limit/IA) porque con
+  varios workers la memoria de cada uno ya no sirve.
 
 > Nota lab: el baneo es en memoria. Si te baneas a ti mismo probando,
 > reinicia (panel: 3 Parar -> 1 Arrancar) y se limpia.
