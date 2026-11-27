@@ -18,21 +18,20 @@ pausa()     { echo; read -rp "  [Enter para volver al menu] " _; }
 arrancar() {
   if viva; then echo -e "  ${A}La Fortaleza ya esta viva.${X}"; return; fi
   echo -e "  ${C}Arrancando la Fortaleza...${X}"
-  nohup python3 app.py > "$APPLOG" 2>&1 &
-  echo $! > "$PIDFILE"
+  # setsid la desengancha del panel: sigue viva aunque cierres el menu / Ctrl+C
+  setsid python3 app.py > "$APPLOG" 2>&1 < /dev/null &
   sleep 2
-  if viva; then echo -e "  ${V}Viva en $URL (PID $(cat $PIDFILE)).${X}"
+  if viva; then echo -e "  ${V}Viva en $URL (PID $(pgrep -f 'python3 app.py' | head -1)).${X}"
   else echo -e "  ${R}No arranco. Mira $APPLOG.${X}"; fi
 }
 
 estado() {
-  if viva; then echo -e "  ${V}● VIVA${X}  en $URL  (PID $(cat $PIDFILE 2>/dev/null || echo '?'))"
+  if viva; then echo -e "  ${V}● VIVA${X}  en $URL  (PID $(pgrep -f 'python3 app.py' | head -1))"
   else echo -e "  ${R}● APAGADA${X}"; fi
 }
 
 parar() {
   pkill -f "python3 app.py" 2>/dev/null
-  rm -f "$PIDFILE"
   echo -e "  ${A}Fortaleza detenida.${X}"
 }
 
@@ -87,6 +86,13 @@ menu() {
   echo
 }
 
+# Auto-encendido: al abrir el panel, la Fortaleza arranca sola si no esta viva
+if ! viva; then
+  echo "Encendiendo la Fortaleza automaticamente..."
+  arrancar
+  sleep 1
+fi
+
 while true; do
   menu
   read -rp "   Elige opcion: " op
@@ -99,7 +105,7 @@ while true; do
     5) medir_skew ;;
     6) ver_log ;;
     7) analizar_pcap ;;
-    0) echo -e "  ${C}Hasta la proxima, Daniel.${X}"; exit 0 ;;
+    0) echo -e "  ${C}Salgo del panel. La Fortaleza SIGUE ENCENDIDA (opcion 3 para apagarla).${X}"; exit 0 ;;
     *) echo -e "  ${R}Opcion no valida.${X}" ;;
   esac
   pausa

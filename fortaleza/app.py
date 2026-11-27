@@ -5,7 +5,7 @@ Web deliberadamente BLINDADA para practicar defensa en entorno seguro.
 Autor: Daniel Garrucho Garcia
 Dependencias: solo Flask.  Hashing: hashlib.scrypt (libreria estandar).
 """
-import hashlib, hmac, os, sqlite3, time, logging, re, threading, secrets
+import hashlib, hmac, os, sqlite3, time, logging, re, threading, secrets, html
 from collections import defaultdict
 from urllib.parse import unquote_plus
 from flask import Flask, request, jsonify, Response, g
@@ -250,8 +250,10 @@ def login():
     ok = verify_pw(password, row["pw"] if row else DUMMY_HASH)
     if row and ok:
         token = nueva_sesion(email, row["rol"])
-        resp = jsonify(ok=True, msg=f"Bienvenido ({row['rol']})", rol=row["rol"])
-        # Cookie segura: HttpOnly (JS no la lee) + SameSite=Strict (anti-CSRF)
+        csrf = secrets.token_urlsafe(16)
+        SESIONES[token]["csrf"] = csrf       # token anti-CSRF ligado a la sesion
+        resp = jsonify(ok=True, msg=f"Bienvenido ({row['rol']})", rol=row["rol"], csrf=csrf)
+        # Cookie: HttpOnly (JS no la lee) + SameSite=Strict (defensa en profundidad)
         resp.set_cookie("session", token, httponly=True, samesite="Strict",
                         max_age=SESION_TTL)
         return resp
@@ -272,10 +274,36 @@ def admin():
 
 @app.route("/logout", methods=["POST"])
 def logout():
+    s = sesion_actual()
+    # Anti-CSRF: exige la cabecera X-CSRF-Token (una web cruzada con un <form>
+    # no puede ponerla, y no puede leer el token). Defensa fiable, no depende
+    # del navegador como SameSite.
+    if not s or not hmac.compare_digest(
+            request.headers.get("X-CSRF-Token", ""), s.get("csrf", "")):
+        alerta("csrf_bloqueado", "path=/logout")
+        return jsonify(error="CSRF: token ausente o invalido"), 403
     SESIONES.pop(request.cookies.get("session"), None)
     resp = jsonify(ok=True, msg="Sesion cerrada")
     resp.delete_cookie("session")
     return resp
+
+# ---- Muro de mensajes (sitio donde probar XSS almacenado) ----------------
+MENSAJES = []
+
+@app.route("/muro", methods=["GET", "POST"])
+def muro():
+    if request.method == "POST":
+        autor = (request.form.get("autor") or "anon")[:40]
+        msg = (request.form.get("mensaje") or "")[:500]
+        MENSAJES.append((autor, msg))
+        return jsonify(ok=True)
+    # GET: se renderiza ESCAPANDO la salida (html.escape) -> el contenido del
+    # usuario se muestra como TEXTO, nunca como HTML/JS ejecutable.
+    filas = "".join(
+        f"<li><b>{html.escape(a)}</b>: {html.escape(m)}</li>" for a, m in MENSAJES[-50:])
+    return Response(
+        "<!doctype html><meta charset=utf-8><title>Muro</title>"
+        "<h1>Muro de mensajes</h1><ul>" + filas + "</ul>", mimetype="text/html")
 
 # ---- TRAMPA (Capa 4): cebos que nadie legitimo toca jamas ----------------
 TRAMPAS = ["/.env", "/wp-login.php", "/admin.php", "/backup.sql",
