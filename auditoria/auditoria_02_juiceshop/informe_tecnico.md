@@ -7,7 +7,7 @@
 | **Tipo de prueba** | Caja negra, aplicación web |
 | **Metodología** | OWASP WSTG |
 | **Autor** | [Tu nombre] |
-| **Fecha** | 2026-11-26 · Versión 0.1 (borrador) |
+| **Fecha** | 2026-11-26 · Versión 1.0 |
 
 > ⚠️ Laboratorio local, app vulnerable a propósito, fines educativos. Escenario: investigar un robo de datos de clientes a través de la web comercial.
 
@@ -116,7 +116,12 @@ hashcat -m 0 hashes.txt /usr/share/wordlists/rockyou.txt
 **Remediación.** Usar **bcrypt/argon2** con sal por usuario; nunca MD5/SHA1 para contraseñas.
 
 ## 5. Conclusiones
-[Al final.]
+
+La tienda online presenta una **inyección SQL crítica** explotable sin autenticación que permite **volcar la base de datos de clientes** (F-02), además de un **bypass de login** (F-01) y un **almacenamiento débil de contraseñas en MD5 sin sal** (F-03). La combinación de F-02 + F-03 explica y reproduce el **robo de datos** investigado: exfiltración de correos y hashes, y crackeo de estos a texto claro.
+
+**Causa raíz:** falta de consultas parametrizadas y de hashing seguro. **Prioridad:** corregir el SQLi de inmediato, migrar el hashing a bcrypt/argon2 y forzar el reseteo de contraseñas de los clientes. Se recomienda **re-evaluación** tras la remediación.
+
+> El análisis del incidente (evidencias, cronología, IOCs y recuperación) se detalla en el **Informe Forense** adjunto.
 
 ---
 <sub>Confidencial. Laboratorio autorizado, fines educativos.</sub>
