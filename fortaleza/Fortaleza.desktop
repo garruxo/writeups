@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=La Fortaleza
-Comment=Control de La Fortaleza (arrancar/parar desde la bandeja)
-Exec=bash /home/papi/writeups/fortaleza/fortaleza_tray.sh
-Icon=security-high
-Terminal=false
-Categories=Security;System;
