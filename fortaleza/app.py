@@ -45,6 +45,10 @@ def verify_pw(password, stored):
     except Exception:
         return False
 
+# Hash señuelo: se verifica cuando el usuario NO existe, para que el login
+# tarde lo mismo exista o no (evita enumerar usuarios por tiempo).
+DUMMY_HASH = hash_pw("senuelo-tiempo-constante")
+
 # ---- Base de datos (consultas SIEMPRE parametrizadas) -------------------
 def db():
     if "db" not in g:
@@ -133,13 +137,19 @@ def guardia():
     if SCANNERS.search(ua):
         strike("scanner", f"ua={ua[:40]!r}")
         return jsonify(error="Peticion rechazada"), 403
-    # 3) firma de ataque en ruta + query + cuerpo (DECODIFICA %20 y NORMALIZA)
-    objetivo = request.path + " " + unquote_plus(request.query_string.decode("latin1", "ignore"))
+    # 3) firma de ataque en ruta + query + cuerpo
+    crudo = request.path + " " + request.query_string.decode("latin1", "ignore")
     try:
-        objetivo += " " + unquote_plus(request.get_data(as_text=True)[:8000])
+        crudo += " " + request.get_data(as_text=True)[:8000]
     except Exception:
         pass
-    objetivo = normaliza(objetivo)             # desarma la ofuscacion
+    # des-encodar REPETIDO: mata la doble/triple codificacion URL (%2520)
+    for _ in range(3):
+        d = unquote_plus(crudo)
+        if d == crudo:
+            break
+        crudo = d
+    objetivo = normaliza(crudo)                # desarma la ofuscacion
     for nombre, rx in WAF:
         if rx.search(objetivo):
             strike(f"waf_{nombre}", f"patron en {request.path}")
@@ -198,7 +208,9 @@ def login():
     # Consulta PARAMETRIZADA: el ' OR 1=1-- es solo texto, no rompe nada.
     row = db().execute("SELECT pw FROM users WHERE email = ?", (email,)).fetchone()
 
-    if row and verify_pw(password, row["pw"]):
+    # Tiempo constante: ejecuta scrypt EXISTA o no el usuario (anti-enumeracion)
+    ok = verify_pw(password, row["pw"] if row else DUMMY_HASH)
+    if row and ok:
         return jsonify(ok=True, msg="Bienvenido, Daniel")
     alerta("login_fallido", f"email={email!r}")    # <- fail2ban cuenta estos
     return jsonify(error="Credenciales incorrectas"), 401
