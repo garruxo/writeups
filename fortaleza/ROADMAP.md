@@ -4,9 +4,15 @@ Laboratorio de **defensa activa** (legal, dentro del propio perímetro) para por
 
 ## Capas base
 - [x] **Capa 1 · Muro** — web blindada (`app.py`): SQL parametrizado, scrypt, headers, rate-limit, honeytoken.
-- [ ] **Capa 2 · Ojos** — IDS (Suricata) + logging que caza el ataque.
-- [ ] **Capa 3 · Lapa** — fail2ban: banea solo el IP intruso (iptables).
-- [ ] **Capa 4 · Trampa** — honeytoken / canarytoken propio.
+- [x] **Capa 2 · Ojos** — logging de seguridad + WAF que inspecciona y caza (SQLi/XSS/traversal/scanners).
+- [x] **Capa 3 · Lapa (en la app)** — auto-baneo del IP intruso: 3 strikes -> 403 + tarpit 2s. Baneo en el perimetro = legal.
+  - [ ] Nivel OS: fail2ban lee el log y banea en el firewall (iptables).
+- [x] **Capa 4 · Trampa** — honeytoken (cebos que nadie legitimo toca; tocarlos = strike directo).
+- [x] **Cerebro v1** — clock skew por conexion (`cerebro_clockskew.py`): huella del reloj fisico.
+- [x] **Panel** — `fortaleza.sh`: control interactivo con menu.
+
+> Nota lab: el baneo es en memoria. Si te baneas a ti mismo probando,
+> reinicia (panel: 3 Parar -> 1 Arrancar) y se limpia.
 
 ## Proyecto "Simbionte" (sistema inmune — encadenar las capas)
 - [ ] 🌀 **Laberinto** — tarpit: endpoints falsos infinitos para scanners/bots.

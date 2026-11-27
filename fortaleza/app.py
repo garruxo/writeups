@@ -7,6 +7,7 @@ Dependencias: solo Flask.  Hashing: hashlib.scrypt (libreria estandar).
 """
 import hashlib, hmac, os, sqlite3, time, logging, re
 from collections import defaultdict
+from urllib.parse import unquote_plus
 from flask import Flask, request, jsonify, Response, g
 
 APP_DIR  = os.path.dirname(os.path.abspath(__file__))
@@ -74,6 +75,56 @@ def rate_limited(ip):
     intentos[ip].append(ahora)
     return len(intentos[ip]) > MAX_INTENTOS
 
+# ---- WAF + Lapa (auto-baneo del IP intruso) -----------------------------
+# Inspecciona cada peticion. Al intruso que insiste, le corta el acceso solo
+# (403 + tarpit). Baneo EN LA APP = dentro de nuestro perimetro = legal.
+WAF = [
+    ("sqli", re.compile(r"union\s+select|\bor\s+1=1\b|\bor\s+'1'='1'|pg_sleep|sleep\s*\(|information_schema|benchmark\s*\(", re.I)),
+    ("xss",  re.compile(r"<script|onerror\s*=|onload\s*=|javascript:|<svg|<img[^>]+src", re.I)),
+    ("traversal", re.compile(r"\.\./|\.\.\\|/etc/passwd|/etc/shadow", re.I)),
+]
+SCANNERS = re.compile(r"sqlmap|nikto|nmap|dirbuster|gobuster|masscan|hydra|wpscan|acunetix|nuclei", re.I)
+STRIKES = defaultdict(int)   # ip -> nº de acciones sospechosas
+BANS = {}                    # ip -> epoch hasta cuando esta baneado
+LIMITE_STRIKES, BAN_SEG = 3, 120
+
+def _ip():
+    return request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
+
+def strike(motivo, extra=""):
+    """Suma un strike al IP y, al llegar al limite, lo banea (la lapa)."""
+    ip = _ip()
+    STRIKES[ip] += 1
+    alerta(motivo, extra)
+    if STRIKES[ip] >= LIMITE_STRIKES and ip not in BANS:
+        BANS[ip] = time.time() + BAN_SEG
+        alerta("BANEADO", f"strikes={STRIKES[ip]} durante={BAN_SEG}s")
+
+@app.before_request
+def guardia():
+    ip = _ip()
+    # 1) ¿ya baneado? -> tarpit (lo pega) + 403
+    if ip in BANS:
+        if time.time() < BANS[ip]:
+            time.sleep(2)
+            return jsonify(error="IP bloqueada"), 403
+        del BANS[ip]; STRIKES[ip] = 0          # expira el baneo
+    # 2) herramienta de ataque por el User-Agent
+    ua = request.headers.get("User-Agent", "")
+    if SCANNERS.search(ua):
+        strike("scanner", f"ua={ua[:40]!r}")
+        return jsonify(error="Peticion rechazada"), 403
+    # 3) firma de ataque en ruta + query + cuerpo (DECODIFICANDO el %20, etc.)
+    objetivo = request.path + " " + unquote_plus(request.query_string.decode("latin1", "ignore"))
+    try:
+        objetivo += " " + unquote_plus(request.get_data(as_text=True)[:2000])
+    except Exception:
+        pass
+    for nombre, rx in WAF:
+        if rx.search(objetivo):
+            strike(f"waf_{nombre}", f"patron en {request.path}")
+            return jsonify(error="Peticion rechazada por el WAF"), 403
+
 # ---- Validacion de entrada ----------------------------------------------
 EMAIL_RE = re.compile(r"^[^@\s]{1,64}@[^@\s]{1,255}$")
 
@@ -140,7 +191,7 @@ TRAMPAS = ["/.env", "/wp-login.php", "/admin.php", "/backup.sql",
 def honeytoken(ruta):
     p = "/" + ruta
     if p in TRAMPAS:
-        alerta("honeytoken", f"cebo={p}")          # tocar esto = intruso 100% seguro
+        strike("honeytoken", f"cebo={p}")          # tocar esto = intruso 100% seguro (suma strike)
         return jsonify(error="Not found"), 404      # le respondemos normal, pero ya esta marcado
     return jsonify(error="Not found"), 404
 
