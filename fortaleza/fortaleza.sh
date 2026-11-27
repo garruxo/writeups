@@ -132,7 +132,7 @@ ia(){
       1) python3 cerebro_ia.py | sed 's/^/  /'; pausa;;
       2) rm -f cerebro_ia.joblib; python3 -c "import cerebro_ia; cerebro_ia.entrenar(); print('  modelo reentrenado')"; pausa;;
       3) read -rp "  Escribe una peticion (p.ej. /?q=1 UNION SELECT): " q
-         python3 -c "import cerebro_ia as i; print('  ->', 'ANOMALA' if i.es_anomalo('''$q''') else 'normal')"; pausa;;
+         Q="$q" python3 -c "import os,cerebro_ia as i; print('  ->', 'ANOMALA' if i.es_anomalo(os.environ['Q']) else 'normal')"; pausa;;
       0) break;;
     esac
   done

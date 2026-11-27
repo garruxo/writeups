@@ -234,10 +234,14 @@ def guardia():
         return jsonify(error="Peticion rechazada"), 403
     # 3) firma de ataque en ruta + query + cuerpo
     crudo = request.path + " " + request.query_string.decode("latin1", "ignore")
-    try:
-        crudo += " " + request.get_data(as_text=True)[:8000]
-    except Exception:
-        pass
+    # El cuerpo del login NO se inspecciona: la contrasena va a consulta
+    # parametrizada + scrypt (ya es segura) y una clave fuerte lleva simbolos
+    # que el WAF/IA confundiria con un ataque. El email se valida aparte.
+    if request.path != "/login":
+        try:
+            crudo += " " + request.get_data(as_text=True)[:8000]
+        except Exception:
+            pass
     # des-encodar REPETIDO: mata la doble/triple codificacion URL (%2520)
     for _ in range(3):
         d = unquote_plus(crudo)
@@ -326,7 +330,7 @@ def stream():
 
 @app.route("/login", methods=["POST"])
 def login():
-    ip = request.remote_addr
+    ip = _ip()                                     # IP real (coherente tras proxy)
     if rate_limited(ip):
         strike("rate_limit")                       # demasiados intentos -> sospechoso
         return jsonify(error="Demasiados intentos. Espera."), 429
@@ -390,6 +394,7 @@ def muro():
         autor = (request.form.get("autor") or "anon")[:40]
         msg = (request.form.get("mensaje") or "")[:500]
         MENSAJES.append((autor, msg))
+        del MENSAJES[:-50]                          # no crecer sin limite (memoria)
         return jsonify(ok=True)
     # GET: se renderiza ESCAPANDO la salida (html.escape) -> el contenido del
     # usuario se muestra como TEXTO, nunca como HTML/JS ejecutable.

@@ -83,6 +83,8 @@ function marcador(a){
 
 async function geo(ip){
   if(geocache[ip]!==undefined) return geocache[ip];
+  // ip-api es HTTP: bajo HTTPS el navegador lo bloquea (contenido mixto)
+  if(location.protocol==='https:'){ geocache[ip]=null; return null; }
   // IPs privadas/locales no geolocalizan
   if(/^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1)/.test(ip)){ geocache[ip]=null; return null; }
   try{
