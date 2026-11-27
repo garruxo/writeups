@@ -147,21 +147,14 @@ def es_anomalo(texto, modelo=None):
     return (modelo or cargar()).es_anomalo(texto)
 
 # ---- Evaluacion profesional (precision/recall sobre datos no vistos) ------
-def evaluar():
-    random.seed(1)
-    normal = corpus_normal(3000); random.shuffle(normal)
-    corte = int(len(normal) * 0.8)
-    train, test_norm = normal[:corte], normal[corte:]   # el modelo NO ve test_norm
+def _entrena_y_mide(train, test_norm, ataques):
     X = np.array([caracteristicas(s) for s in train], dtype=float)
     iforest = IsolationForest(contamination=0.01, n_estimators=300, random_state=0).fit(X)
     m = ModeloAnomalias(iforest, X.mean(axis=0), X.std(axis=0), X.max(axis=0))
-
-    ataques = corpus_ataques(500)
-    FP = sum(m.es_anomalo(s) for s in test_norm)     # normal marcado como ataque
-    TP = sum(m.es_anomalo(s) for s in ataques)       # ataque detectado
-    FN = len(ataques) - TP
-    fpr = FP / len(test_norm)
-    recall = TP / len(ataques)
+    FP = sum(m.es_anomalo(s) for s in test_norm)
+    TP = sum(m.es_anomalo(s) for s in ataques)
+    fpr = FP / len(test_norm) if test_norm else 0
+    recall = TP / len(ataques) if ataques else 0
     precision = TP / (TP + FP) if (TP + FP) else 0
     f1 = 2 * precision * recall / (precision + recall) if (precision + recall) else 0
     print(f"Entrenado con {len(train)} normales.  Evaluado con {len(test_norm)} "
@@ -172,7 +165,35 @@ def evaluar():
     print(f"  F1-score                      : {f1*100:5.1f}%")
     return recall, fpr
 
+def evaluar():
+    """Evaluacion con datos SINTETICOS (laboratorio)."""
+    random.seed(1)
+    normal = corpus_normal(3000); random.shuffle(normal)
+    corte = int(len(normal) * 0.8)
+    return _entrena_y_mide(normal[:corte], normal[corte:], corpus_ataques(500))
+
+def _leer(fichero):
+    # Se decodifica (unquote) para que coincida con lo que ve el modelo en
+    # produccion (guardia decodifica antes de pasar la peticion a la IA).
+    from urllib.parse import unquote_plus
+    with open(fichero, encoding="utf-8", errors="ignore") as fh:
+        return [unquote_plus(l.strip()) for l in fh if l.strip()]
+
+def evaluar_real(f_normal, f_ataques):
+    """Evaluacion con TRAFICO REAL capturado (dos ficheros: normal y ataques)."""
+    normal = _leer(f_normal); ataques = _leer(f_ataques)
+    if len(normal) < 20 or len(ataques) < 5:
+        print("Hacen falta mas muestras (>=20 normales y >=5 ataques)."); return
+    random.seed(1); random.shuffle(normal)
+    corte = int(len(normal) * 0.8)
+    print(f"[TRAFICO REAL]  normales={len(normal)}  ataques={len(ataques)}\n")
+    return _entrena_y_mide(normal[:corte], normal[corte:], ataques)
+
 if __name__ == "__main__":
-    evaluar()
-    entrenar()   # guarda el modelo (entrenado con todo el normal) para la app
-    print("\nModelo guardado en cerebro_ia.joblib")
+    import sys
+    if len(sys.argv) == 3:            # python3 cerebro_ia.py normal.txt ataques.txt
+        evaluar_real(sys.argv[1], sys.argv[2])
+    else:
+        evaluar()
+        entrenar()   # guarda el modelo para la app
+        print("\nModelo guardado en cerebro_ia.joblib")

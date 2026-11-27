@@ -25,6 +25,10 @@ ALM, BACKEND = crear_almacen()
 # falsear). Sin proxy (desarrollo), la identidad es la IP de la conexion.
 PROXIES_CONFIANZA = set(filter(None, os.environ.get("TRUSTED_PROXIES", "").split(",")))
 
+# Si se define LOG_TRAFICO, se registra CADA peticion real (para el corpus de la
+# IA entrenada con trafico real, no sintetico).
+TRAFICO_LOG = os.environ.get("LOG_TRAFICO")
+
 # ---- Log de seguridad (lo lee fail2ban en la Capa 3) --------------------
 # Logger propio y aislado: SOLO lineas SECURITY, sin ruido de Flask.
 sec = logging.getLogger("fortaleza")
@@ -212,6 +216,14 @@ def guardia():
     # en una interfaz separada y protegida por rol admin.
     if request.path in ("/mapa", "/api/ataques"):
         return
+    # Registro de trafico REAL (corpus) si esta activado
+    if TRAFICO_LOG:
+        try:
+            cuerpo = request.get_data(as_text=True)[:500]
+            with open(TRAFICO_LOG, "a", encoding="utf-8") as fh:
+                fh.write((request.full_path + " " + cuerpo).replace("\n", " ").strip() + "\n")
+        except Exception:
+            pass
     ip = _ip()
     # La LAN/loopback PROPIA nunca se bloquea ni recibe tarpit: no te bloqueas a
     # ti mismo (el panel sigue respondiendo). El bloqueo persistente es para IPs

@@ -146,9 +146,11 @@ ia(){
       esac
       continue
     fi
-    echo "  1) Ver metricas (recall / precision / F1)"
+    echo "  1) Ver metricas (datos sinteticos de laboratorio)"
     echo "  2) Reentrenar la IA"
     echo "  3) Probar una peticion (¿la marca como anomala?)"
+    echo "  4) Evaluar con TRAFICO REAL capturado (tus .txt)"
+    echo "  5) Capturar trafico real (guia)"
     echo "  0) Volver"; echo
     read -rp "  Opcion: " o; echo
     case "$o" in
@@ -156,6 +158,16 @@ ia(){
       2) rm -f cerebro_ia.joblib; python3 -c "import cerebro_ia; cerebro_ia.entrenar(); print('  modelo reentrenado')"; pausa;;
       3) read -rp "  Escribe una peticion (p.ej. /?q=1 UNION SELECT): " q
          Q="$q" python3 -c "import os,cerebro_ia as i; print('  ->', 'ANOMALA' if i.es_anomalo(os.environ['Q']) else 'normal')"; pausa;;
+      4) read -rp "  Fichero de trafico NORMAL (.txt): " fn
+         read -rp "  Fichero de ATAQUES (.txt): " fa
+         [ -f "$fn" ] && [ -f "$fa" ] && python3 cerebro_ia.py "$fn" "$fa" | sed 's/^/  /' || echo -e "  ${R}No existen esos ficheros.${X}"; pausa;;
+      5) echo -e "  ${C}Como capturar tu propio trafico real:${X}"
+         echo "  1. Para la Fortaleza (Control > Parar)."
+         echo "  2. Arrancala GRABANDO el trafico NORMAL mientras la usas normal:"
+         echo "       LOG_TRAFICO=normal.txt python3 app.py   (navega, entra, postea; luego Ctrl+C)"
+         echo "  3. Arrancala grabando los ATAQUES mientras atacas (atacante.py / sqlmap):"
+         echo "       LOG_TRAFICO=ataques.txt python3 app.py   (lanza ataques; luego Ctrl+C)"
+         echo "  4. Vuelve aqui, opcion 4, y pasale normal.txt y ataques.txt."; pausa;;
       0) break;;
     esac
   done

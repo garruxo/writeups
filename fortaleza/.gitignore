@@ -12,3 +12,9 @@ cerebro_ia.joblib
 # certificados TLS (se generan)
 cert.pem
 key.pem
+
+# corpus de trafico capturado
+*_raw.txt
+trafico*.txt
+normal.txt
+ataques.txt
