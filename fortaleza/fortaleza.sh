@@ -19,6 +19,38 @@ estado(){
   else echo -e "${R}● APAGADA${X}"; fi
 }
 
+# monitor en vivo del log (Enter para parar)
+monitor(){
+  [ -f fortaleza_seguridad.log ] || { echo "  (sin log todavia)"; return; }
+  echo -e "  ${C}Monitor en vivo. Pulsa Enter para volver.${X}\n"
+  tail -n 8 -f fortaleza_seguridad.log & local t=$!
+  read -r _; kill "$t" 2>/dev/null; wait "$t" 2>/dev/null
+}
+
+# resumen tipo dashboard en el terminal
+resumen(){
+  encender
+  curl -s "$URL/api/ataques" | python3 -c "
+import sys,json
+from collections import Counter
+d=json.load(sys.stdin)
+exp=sum(1 for a in d if a['expulsado']); fr=sum(1 for a in d if a.get('frontera_cerrada'))
+ev=sum(a['n_eventos'] for a in d)
+print(f'  Vigilados: {len(d)}   Expulsados: {exp}   Fronteras cerradas: {fr}   Eventos: {ev}')
+mot=Counter()
+for a in d:
+    for e in a.get('eventos',[]): mot[e['motivo']]+=1
+if mot: print('  Top motivos: '+', '.join(f'{m}={n}' for m,n in mot.most_common(6)))
+" 2>/dev/null || echo "  (arranca la Fortaleza)"
+}
+
+# chequeo de salud de los componentes
+salud(){
+  echo -n "  App (Fortaleza): "; viva && echo -e "${V}OK${X}" || echo -e "${R}CAIDA${X}"
+  echo -n "  Redis:           "; redis-cli ping >/dev/null 2>&1 && echo -e "${V}OK${X}" || echo -e "${A}no (opcional en desarrollo)${X}"
+  echo -n "  fail2ban:        "; systemctl is-active fail2ban >/dev/null 2>&1 && echo -e "${V}activo${X}" || echo -e "${A}no instalado (Produccion > fail2ban)${X}"
+}
+
 # ---------- CONTROL ----------
 control(){
   while true; do
@@ -57,16 +89,20 @@ analisis(){
   while true; do
     clear; echo -e "${C}== ANALISIS ==${X}  $(estado)\n"
     echo "  1) Ver log de seguridad (ultimos intrusos)"
-    echo "  2) Ver expedientes (quien ataca, sospecha, frontera)"
-    echo "  3) Abrir el MAPA de ataques en el navegador"
-    echo "  4) Medir clock skew (huella del reloj fisico)"
-    echo "  5) Analizar un .pcap"
+    echo "  2) Monitor EN VIVO (log en tiempo real)"
+    echo "  3) Resumen rapido (dashboard en terminal)"
+    echo "  4) Ver expedientes (quien ataca, sospecha, frontera)"
+    echo "  5) Abrir el MAPA de ataques en el navegador"
+    echo "  6) Medir clock skew (huella del reloj fisico)"
+    echo "  7) Analizar un .pcap"
     echo "  0) Volver"; echo
     read -rp "  Opcion: " o; echo
     case "$o" in
       1) if [ -s fortaleza_seguridad.log ]; then tail -n 20 fortaleza_seguridad.log
          else echo -e "  ${V}Sin intrusos todavia.${X}"; fi; pausa;;
-      2) encender; curl -s "$URL/api/ataques" | python3 -c "
+      2) monitor;;
+      3) resumen; pausa;;
+      4) encender; curl -s "$URL/api/ataques" | python3 -c "
 import sys,json
 d=json.load(sys.stdin)
 if not d: print('  Sin ataques registrados.')
@@ -75,9 +111,9 @@ for a in d:
     est='EXPULSADO' if a['expulsado'] else 'vigilado'
     print(f\"  {a['ip']:<16} sospecha {a['sospecha']:<2} {est:<9} origen {a.get('origen','')}{fr}\")
 " 2>/dev/null || echo "  (arranca la Fortaleza primero)"; pausa;;
-      3) encender; echo "  Abriendo $URL/mapa ..."; (xdg-open "$URL/mapa" >/dev/null 2>&1 &) || echo "  Abrelo a mano: $URL/mapa"; pausa;;
-      4) encender; bash medir_skew.sh; pausa;;
-      5) read -rp "  Ruta del .pcap: " p; [ -f "$p" ] && python3 cerebro_clockskew.py "$p" || echo -e "  ${R}No existe.${X}"; pausa;;
+      5) encender; echo "  Abriendo $URL/mapa ..."; (xdg-open "$URL/mapa" >/dev/null 2>&1 &) || echo "  Abrelo a mano: $URL/mapa"; pausa;;
+      6) encender; bash medir_skew.sh; pausa;;
+      7) read -rp "  Ruta del .pcap: " p; [ -f "$p" ] && python3 cerebro_clockskew.py "$p" || echo -e "  ${R}No existe.${X}"; pausa;;
       0) break;;
     esac
   done
@@ -106,15 +142,21 @@ ia(){
 produccion(){
   while true; do
     clear; echo -e "${A}== PRODUCCION ==${X}\n"
-    echo "  1) Desplegar (gunicorn + Redis + HTTPS)  -> https://localhost:8443"
-    echo "  2) Estado de Redis"
-    echo "  3) Ver configuracion (workers, puertos)"
+    echo "  1) Chequeo de salud (app / Redis / fail2ban)"
+    echo "  2) Desplegar (gunicorn + Redis + HTTPS)  -> https://localhost:8443"
+    echo "  3) fail2ban: INSTALAR frontera a nivel de sistema (iptables)"
+    echo "  4) fail2ban: ver IPs baneadas en el cortafuegos"
+    echo "  5) Estado de Redis"
+    echo "  6) Ver configuracion (workers, puertos)"
     echo "  0) Volver"; echo
     read -rp "  Opcion: " o; echo
     case "$o" in
-      1) echo "  Lanzando despliegue (Ctrl+C para parar)..."; bash desplegar.sh;;
-      2) redis-cli ping 2>/dev/null && echo "  Redis OK" || echo -e "  ${R}Redis no responde (sudo service redis-server start)${X}"; pausa;;
-      3) echo "  gunicorn: $(grep -E 'workers|bind' gunicorn_conf.py | sed 's/#.*//' | tr -d ' ')"; echo "  Despliegue: desplegar.sh -> :8443 (TLS)"; pausa;;
+      1) salud; pausa;;
+      2) echo "  Lanzando despliegue (Ctrl+C para parar)..."; bash desplegar.sh;;
+      3) echo "  Instala fail2ban para banear en iptables las IPs expulsadas (sudo):"; bash instalar_fail2ban.sh; pausa;;
+      4) sudo fail2ban-client status fortaleza 2>/dev/null || echo -e "  ${A}Jail no instalada (opcion 3) o fail2ban parado.${X}"; pausa;;
+      5) redis-cli ping 2>/dev/null && echo "  Redis OK" || echo -e "  ${R}Redis no responde (sudo service redis-server start)${X}"; pausa;;
+      6) echo "  gunicorn: $(grep -E 'workers|bind' gunicorn_conf.py | sed 's/#.*//' | tr -d ' ')"; echo "  Despliegue: desplegar.sh -> :8443 (TLS)"; pausa;;
       0) break;;
     esac
   done
