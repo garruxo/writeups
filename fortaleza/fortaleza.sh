@@ -8,9 +8,16 @@ URL="http://localhost:8000"
 APPLOG="app.log"
 V='\033[1;32m'; R='\033[1;31m'; A='\033[1;33m'; C='\033[1;36m'; M='\033[1;35m'; X='\033[0m'
 
-viva(){ curl -s -o /dev/null --max-time 2 "$URL/"; }
-encender(){ viva || { setsid python3 app.py > "$APPLOG" 2>&1 < /dev/null & sleep 2; }; }
+viva(){ curl -s -o /dev/null --max-time 3 "$URL/"; }
+encender(){ viva || { setsid env TRUSTED_PROXIES=127.0.0.1 BIND_HOST="${FORT_HOST:-127.0.0.1}" python3 app.py > "$APPLOG" 2>&1 < /dev/null & sleep 2; }; }
 apagar(){ pkill -f "python3 app.py" 2>/dev/null; }
+arrancar_exterior(){
+  apagar; sleep 1
+  setsid env BIND_HOST=0.0.0.0 python3 app.py > "$APPLOG" 2>&1 < /dev/null & sleep 2
+  local ipv; ipv=$(hostname -I 2>/dev/null | awk '{print $1}')
+  echo -e "  ${V}Accesible desde el exterior en http://${ipv:-TU_IP}:8000${X}"
+  echo "  (otras maquinas de la red ya pueden conectarse y atacar)"
+}
 pausa(){ echo; read -rp "  [Enter para continuar] " _; }
 pid(){ pgrep -f "python3 app.py" | head -1; }
 
@@ -55,19 +62,21 @@ salud(){
 control(){
   while true; do
     clear; echo -e "${C}== CONTROL ==${X}  $(estado)\n"
-    echo "  1) Arrancar la Fortaleza"
-    echo "  2) Parar"
-    echo "  3) Reiniciar (limpia baneos y expedientes)"
-    echo "  4) Estado"
-    echo "  5) Atacar (demo: ver el muro aguantar)"
+    echo "  1) Arrancar la Fortaleza (solo este equipo)"
+    echo "  2) Arrancar accesible desde el EXTERIOR (0.0.0.0)"
+    echo "  3) Parar"
+    echo "  4) Reiniciar (limpia baneos y expedientes)"
+    echo "  5) Estado"
+    echo "  6) Atacar (demo: ver el muro aguantar)"
     echo "  0) Volver"; echo
     read -rp "  Opcion: " o; echo
     case "$o" in
       1) encender; estado; pausa;;
-      2) apagar; echo -e "  ${A}Detenida.${X}"; pausa;;
-      3) apagar; sleep 1; encender; echo -e "  ${V}Reiniciada (estado limpio).${X}"; pausa;;
-      4) estado; pausa;;
-      5) atacar_demo; pausa;;
+      2) arrancar_exterior; pausa;;
+      3) apagar; echo -e "  ${A}Detenida.${X}"; pausa;;
+      4) apagar; sleep 1; encender; echo -e "  ${V}Reiniciada (estado limpio).${X}"; pausa;;
+      5) estado; pausa;;
+      6) atacar_demo; pausa;;
       0) break;;
     esac
   done
@@ -75,13 +84,15 @@ control(){
 
 atacar_demo(){
   encender
+  local F="45.148.10.9"   # IP de atacante SIMULADA, publica (asi no te baneas a ti)
+  echo -e "  ${A}Demo: atacamos como el IP externo $F (tu equipo no se bloquea).${X}\n"
   echo -e "  ${C}1) SQLi en login ( ' OR 1=1-- ):${X}"
-  echo -n "     -> "; curl -s -X POST "$URL/login" --data-urlencode "email=' OR 1=1--" --data "password=x"; echo
+  echo -n "     -> "; curl -s -H "X-Forwarded-For: $F" -X POST "$URL/login" --data-urlencode "email=' OR 1=1--" --data "password=x"; echo
   echo -e "  ${C}2) Honeytoken (/.env):${X}"
-  echo -n "     -> "; curl -s "$URL/.env"; echo
+  echo -n "     -> "; curl -s -H "X-Forwarded-For: $F" "$URL/.env"; echo
   echo -e "  ${C}3) XSS que evade la regex (lo caza la IA):${X}"
-  echo -n "     -> "; curl -s -X POST "$URL/muro" --data-urlencode "mensaje=<details open ontoggle=x>"; echo
-  echo -e "  ${V}El muro rebota; el intruso queda marcado (Analisis > expedientes).${X}"
+  echo -n "     -> "; curl -s -H "X-Forwarded-For: $F" -X POST "$URL/muro" --data-urlencode "mensaje=<details open ontoggle=x>"; echo
+  echo -e "\n  ${V}El muro rebota y $F queda EXPULSADO. Mira Analisis > expedientes o el mapa.${X}"
 }
 
 # ---------- ANALISIS ----------
@@ -123,6 +134,18 @@ for a in d:
 ia(){
   while true; do
     clear; echo -e "${M}== IA (deteccion de anomalias) ==${X}\n"
+    if ! python3 -c "import sklearn" 2>/dev/null; then
+      echo -e "  ${R}Falta scikit-learn (la IA no puede funcionar).${X}"
+      echo -e "  ${A}La Fortaleza funciona igual sin IA; para activarla, instalala:${X}\n"
+      echo "  i) Instalar la IA ahora (sudo apt install python3-sklearn...)"
+      echo "  0) Volver"; echo
+      read -rp "  Opcion: " o; echo
+      case "$o" in
+        i|I) sudo apt install -y python3-sklearn python3-numpy python3-joblib; pausa;;
+        0) break;;
+      esac
+      continue
+    fi
     echo "  1) Ver metricas (recall / precision / F1)"
     echo "  2) Reentrenar la IA"
     echo "  3) Probar una peticion (¿la marca como anomala?)"

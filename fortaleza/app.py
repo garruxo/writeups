@@ -213,14 +213,18 @@ def guardia():
     if request.path in ("/mapa", "/api/ataques"):
         return
     ip = _ip()
-    # 0) Frontera cerrada a su ORIGEN -> cortado en la frontera (ni entra)
-    if frontera_cerrada(ip):
-        time.sleep(2)
-        return jsonify(error="Origen bloqueado en frontera"), 403
-    # 1) ¿ya expulsado? (clave ban con TTL; al expirar, 2a oportunidad sola)
-    if ALM.get(f"ban:{ip}"):
-        time.sleep(2)
-        return jsonify(error="IP expulsada"), 403
+    # La LAN/loopback PROPIA nunca se bloquea ni recibe tarpit: no te bloqueas a
+    # ti mismo (el panel sigue respondiendo). El bloqueo persistente es para IPs
+    # externas. (Las firmas/IA de abajo si se aplican a todos, por peticion.)
+    if not es_privada(ip):
+        # 0) Frontera cerrada a su ORIGEN -> cortado en la frontera (ni entra)
+        if frontera_cerrada(ip):
+            time.sleep(2)
+            return jsonify(error="Origen bloqueado en frontera"), 403
+        # 1) ¿ya expulsado? (clave ban con TTL; al expirar, 2a oportunidad sola)
+        if ALM.get(f"ban:{ip}"):
+            time.sleep(2)
+            return jsonify(error="IP expulsada"), 403
     # 2) herramienta de ataque por el User-Agent
     ua = request.headers.get("User-Agent", "")
     if SCANNERS.search(ua):
@@ -459,4 +463,6 @@ init_db()              # tambien bajo gunicorn (que no ejecuta el bloque __main_
 print(f"[Fortaleza] almacen={BACKEND}  proxies={PROXIES_CONFIANZA or 'ninguno'}")
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8000, threaded=True)
+    # BIND_HOST=0.0.0.0 para que sea accesible desde el exterior (otras maquinas)
+    host = os.environ.get("BIND_HOST", "127.0.0.1")
+    app.run(host=host, port=8000, threaded=True)
