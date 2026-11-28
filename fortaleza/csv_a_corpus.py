@@ -32,9 +32,9 @@ def main():
             lbl_col = next((c for c in cols if c and c.lower() in LBL), None)
         if not req_col or not lbl_col:
             print("Columnas del CSV:", cols)
-            print("No pude auto-detectar. Repite indicando columnas:")
-            print(f"  python3 csv_a_corpus.py {src} <col_peticion> <col_etiqueta>")
-            return
+            print("No pude auto-detectar. Repite indicando columnas (sin < >):")
+            print(f"  python3 csv_a_corpus.py {src} COL_PETICION COL_ETIQUETA")
+            sys.exit(1)   # salir con error para que el script lo detecte
         normal, ataque = [], []
         for row in r:
             pet = (row.get(req_col) or "").strip().replace("\n", " ")
