@@ -151,6 +151,7 @@ ia(){
     echo "  3) Probar una peticion (¿la marca como anomala?)"
     echo "  4) Evaluar con TRAFICO REAL capturado (tus .txt)"
     echo "  5) Capturar trafico real (guia)"
+    echo "  6) Evaluar con el dataset REAL CSIC 2010"
     echo "  0) Volver"; echo
     read -rp "  Opcion: " o; echo
     case "$o" in
@@ -168,6 +169,7 @@ ia(){
          echo "  3. Arrancala grabando los ATAQUES mientras atacas (atacante.py / sqlmap):"
          echo "       LOG_TRAFICO=ataques.txt python3 app.py   (lanza ataques; luego Ctrl+C)"
          echo "  4. Vuelve aqui, opcion 4, y pasale normal.txt y ataques.txt."; pausa;;
+      6) echo -e "  ${C}Dataset REAL academico CSIC 2010:${X}"; bash descargar_csic.sh | sed 's/^/  /'; pausa;;
       0) break;;
     esac
   done
@@ -183,6 +185,8 @@ produccion(){
     echo "  4) fail2ban: ver IPs baneadas en el cortafuegos"
     echo "  5) Estado de Redis"
     echo "  6) Ver configuracion (workers, puertos)"
+    echo "  7) Geo: instalar base de geolocalizacion (mapa por pais)"
+    echo "  8) Geo: bloquear un PAIS (geo-blocking)"
     echo "  0) Volver"; echo
     read -rp "  Opcion: " o; echo
     case "$o" in
@@ -192,6 +196,11 @@ produccion(){
       4) sudo fail2ban-client status fortaleza 2>/dev/null || echo -e "  ${A}Jail no instalada (opcion 3) o fail2ban parado.${X}"; pausa;;
       5) redis-cli ping 2>/dev/null && echo "  Redis OK" || echo -e "  ${R}Redis no responde (sudo service redis-server start)${X}"; pausa;;
       6) echo "  gunicorn: $(grep -E 'workers|bind' gunicorn_conf.py | sed 's/#.*//' | tr -d ' ')"; echo "  Despliegue: desplegar.sh -> :8443 (TLS)"; pausa;;
+      7) bash instalar_geo.sh; pausa;;
+      8) read -rp "  Codigo ISO del pais a bloquear (ej RU, CN): " pb
+         apagar; sleep 1
+         setsid env TRUSTED_PROXIES=127.0.0.1 BLOQUEAR_PAISES="$pb" python3 app.py > "$APPLOG" 2>&1 < /dev/null & sleep 2
+         echo -e "  ${V}Reiniciada bloqueando trafico de: $pb${X} (necesita la base geo instalada)"; pausa;;
       0) break;;
     esac
   done

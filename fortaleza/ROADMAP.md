@@ -44,6 +44,15 @@ Laboratorio de **defensa activa** (legal, dentro del propio perímetro) para por
 - [x] **Auditoria del codigo**: 10 fallos/limitaciones corregidos (rate-limit
   tras proxy, fuga de memoria, FP del WAF en contrasenas, estado atomico,
   thread-safety, mapa protegido, geo bajo HTTPS, inyeccion en el panel...).
+- [x] **IA con datos REALES**: `LOG_TRAFICO` captura trafico real y
+  `cerebro_ia.py normal.txt ataques.txt` lo evalua (Recall 80%, FP 1.67%).
+- [x] **Dataset CSIC 2010**: `csic_a_corpus.py` + `descargar_csic.sh` -> evaluar
+  la IA con trafico HTTP academico real etiquetado.
+- [x] **Geolocalizacion offline** (`geo.py`, estilo MaxMind/DB-IP/CrowdSec):
+  el mapa situa a los atacantes por pais/ciudad sin API externa (va bajo HTTPS).
+  `instalar_geo.sh` baja la base gratis sin clave.
+- [x] **Geo-blocking**: `BLOQUEAR_PAISES=RU,CN` corta en la frontera el trafico
+  de paises marcados (imita xt_geoip / CrowdSec).
 
 > Nota lab: el baneo es en memoria. Si te baneas a ti mismo probando,
 > reinicia (panel: 3 Parar -> 1 Arrancar) y se limpia.

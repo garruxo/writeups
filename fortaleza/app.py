@@ -10,6 +10,7 @@ from collections import defaultdict
 from urllib.parse import unquote_plus
 from flask import Flask, request, jsonify, Response, g
 from almacen import crear_almacen
+import geo
 
 APP_DIR  = os.path.dirname(os.path.abspath(__file__))
 DB_PATH  = os.path.join(APP_DIR, "fortaleza.db")
@@ -28,6 +29,9 @@ PROXIES_CONFIANZA = set(filter(None, os.environ.get("TRUSTED_PROXIES", "").split
 # Si se define LOG_TRAFICO, se registra CADA peticion real (para el corpus de la
 # IA entrenada con trafico real, no sintetico).
 TRAFICO_LOG = os.environ.get("LOG_TRAFICO")
+
+# Geo-blocking: paises cuyo trafico se corta en la frontera (codigos ISO, ej "RU,CN")
+PAISES_BLOQUEADOS = set(filter(None, os.environ.get("BLOQUEAR_PAISES", "").upper().split(",")))
 
 # ---- Log de seguridad (lo lee fail2ban en la Capa 3) --------------------
 # Logger propio y aislado: SOLO lineas SECURITY, sin ruido de Flask.
@@ -229,7 +233,13 @@ def guardia():
     # ti mismo (el panel sigue respondiendo). El bloqueo persistente es para IPs
     # externas. (Las firmas/IA de abajo si se aplican a todos, por peticion.)
     if not es_privada(ip):
-        # 0) Frontera cerrada a su ORIGEN -> cortado en la frontera (ni entra)
+        # 0a) Geo-blocking: paises bloqueados -> cortados en la frontera
+        if PAISES_BLOQUEADOS:
+            g = geo.geolocalizar(ip)
+            if g and g.get("pais") in PAISES_BLOQUEADOS:
+                time.sleep(2)
+                return jsonify(error="Pais bloqueado"), 403
+        # 0b) Frontera cerrada a su ORIGEN -> cortado en la frontera (ni entra)
         if frontera_cerrada(ip):
             time.sleep(2)
             return jsonify(error="Origen bloqueado en frontera"), 403
@@ -431,12 +441,17 @@ def api_ataques():
         sosp = int(ALM.get(k) or 0)
         evs = [json.loads(x) for x in ALM.lrange(f"ev:{ip}")]   # mas nuevo primero
         ult = evs[0] if evs else None
+        g = geo.geolocalizar(ip) or {}
         datos.append({
             "ip": ip,
             "sospecha": sosp,
             "expulsado": bool(ALM.get(f"ban:{ip}")),
             "origen": subred(ip),
             "frontera_cerrada": frontera_cerrada(ip),
+            "pais": g.get("pais"),
+            "ciudad": g.get("ciudad"),
+            "lat": g.get("lat"),
+            "lon": g.get("lon"),
             "n_eventos": len(evs),
             "ultimo": ult["motivo"] if ult else None,
             "hace_seg": round(now - ult["t"]) if ult else 0,

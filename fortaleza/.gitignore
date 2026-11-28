@@ -18,3 +18,10 @@ key.pem
 trafico*.txt
 normal.txt
 ataques.txt
+
+# geo y datasets
+*.mmdb
+csic_*.txt
+normalTraffic*.txt
+anomalousTraffic*.txt
+_normal_csic.txt
