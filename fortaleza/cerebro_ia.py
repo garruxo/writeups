@@ -128,6 +128,21 @@ class ModeloAnomalias:
         # 3) forma global
         return self.iforest.predict(x.reshape(1, -1))[0] == -1
 
+    def es_anomalo_batch(self, textos):
+        """Version vectorizada: evalua MILES de peticiones de golpe (una sola
+        llamada a predict en vez de una por muestra). Imprescindible para
+        datasets grandes."""
+        if not textos:
+            return np.zeros(0, dtype=bool)
+        X = np.array([caracteristicas(t) for t in textos], dtype=float)
+        res = np.zeros(len(textos), dtype=bool)
+        for i in PELIGROSAS:                                  # 1) novedad de rango
+            res |= X[:, i] > self.maximos[i]
+        z = np.abs((X - self.media) / (self.desv + 1.0)).max(axis=1)  # 2) z-score
+        res |= z > Z_UMBRAL
+        res |= (self.iforest.predict(X) == -1)               # 3) forma global (1 llamada)
+        return res
+
 def entrenar():
     X = np.array([caracteristicas(s) for s in corpus_normal()], dtype=float)
     iforest = IsolationForest(contamination=0.01, n_estimators=300, random_state=0).fit(X)
@@ -147,12 +162,24 @@ def es_anomalo(texto, modelo=None):
     return (modelo or cargar()).es_anomalo(texto)
 
 # ---- Evaluacion profesional (precision/recall sobre datos no vistos) ------
+MUESTRA_MAX = 60000   # tope por conjunto: 60k al azar bastan para medir bien
+
+def _muestra(xs, n):
+    if len(xs) > n:
+        random.seed(1); return random.sample(xs, n)
+    return xs
+
 def _entrena_y_mide(train, test_norm, ataques):
+    n0 = (len(train), len(test_norm), len(ataques))
+    train, test_norm, ataques = _muestra(train, MUESTRA_MAX), _muestra(test_norm, MUESTRA_MAX), _muestra(ataques, MUESTRA_MAX)
+    if (len(train), len(test_norm), len(ataques)) != n0:
+        print(f"[muestra] dataset grande: uso {len(train)} train / {len(test_norm)} test / "
+              f"{len(ataques)} ataques al azar (de {n0[0]}/{n0[1]}/{n0[2]}).\n")
     X = np.array([caracteristicas(s) for s in train], dtype=float)
     iforest = IsolationForest(contamination=0.01, n_estimators=300, random_state=0).fit(X)
     m = ModeloAnomalias(iforest, X.mean(axis=0), X.std(axis=0), X.max(axis=0))
-    FP = sum(m.es_anomalo(s) for s in test_norm)
-    TP = sum(m.es_anomalo(s) for s in ataques)
+    FP = int(m.es_anomalo_batch(test_norm).sum())
+    TP = int(m.es_anomalo_batch(ataques).sum())
     fpr = FP / len(test_norm) if test_norm else 0
     recall = TP / len(ataques) if ataques else 0
     precision = TP / (TP + FP) if (TP + FP) else 0
