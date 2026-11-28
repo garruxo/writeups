@@ -51,7 +51,9 @@ def main():
             sys.exit(1)   # salir con error para que el script lo detecte
         normal, ataque = [], []
         for row in r:
-            pet = (row.get(req_col) or "").strip().replace("\n", " ")
+            # split() colapsa TODO espacio/control (\r \n \t) -> una sola linea
+            # limpia; evita que un \r parta una peticion en muchas lineas.
+            pet = " ".join((row.get(req_col) or "").split())
             lab = (row.get(lbl_col) or "")
             if not pet:
                 continue
