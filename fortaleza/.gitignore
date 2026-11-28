@@ -25,3 +25,5 @@ csic_*.txt
 normalTraffic*.txt
 anomalousTraffic*.txt
 _normal_csic.txt
+*.csv
+web_attack.csv
