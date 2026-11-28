@@ -152,6 +152,7 @@ ia(){
     echo "  4) Evaluar con TRAFICO REAL capturado (tus .txt)"
     echo "  5) Capturar trafico real (guia)"
     echo "  6) Evaluar con el dataset REAL CSIC 2010"
+    echo "  7) Comparar SUPERVISADO vs no supervisado (mismos .txt)"
     echo "  0) Volver"; echo
     read -rp "  Opcion: " o; echo
     case "$o" in
@@ -170,6 +171,14 @@ ia(){
          echo "       LOG_TRAFICO=ataques.txt python3 app.py   (lanza ataques; luego Ctrl+C)"
          echo "  4. Vuelve aqui, opcion 4, y pasale normal.txt y ataques.txt."; pausa;;
       6) echo -e "  ${C}Dataset REAL academico CSIC 2010:${X}"; bash descargar_csic.sh | sed 's/^/  /'; pausa;;
+      7) read -rp "  Fichero de trafico NORMAL (.txt): " fn
+         read -rp "  Fichero de ATAQUES (.txt): " fa
+         if [ -f "$fn" ] && [ -f "$fa" ]; then
+           echo -e "  ${C}--- NO SUPERVISADO (cerebro_ia: solo ve lo normal) ---${X}"
+           python3 cerebro_ia.py "$fn" "$fa" | sed 's/^/  /'
+           echo; echo -e "  ${C}--- SUPERVISADO (cerebro_super: aprende de los ataques) ---${X}"
+           python3 cerebro_super.py "$fn" "$fa" | sed 's/^/  /'
+         else echo -e "  ${R}No existen esos ficheros.${X}"; fi; pausa;;
       0) break;;
     esac
   done
